@@ -71,11 +71,8 @@ input[type="checkbox"] {
     color: rgb(160, 160, 160);
 }
 .enter_button {
+    margin-left: 112px;
     margin-top: 20px;
-    text-align: center;
-}
-button {
-    margin-left: 110px;
     font-family: "Anonymous Pro", monospace;
     appearance: none;
     border-color: rgb(34, 71, 98);

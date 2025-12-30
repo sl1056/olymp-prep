@@ -30,8 +30,8 @@
                 <input type="checkbox" id="checkbox"> <a className ="checkboxA">Запомнить меня</a>
                 <a href="/forgot" className="forgotten"> Забыли пароль?</a>
             </div>
-            <div className="enter_button">
-                <button>Войти</button>
+            <div>
+                <button className="enter_button">Войти</button>
             </div>
         </div>
         <Info></Info>
@@ -39,5 +39,7 @@
 </template>
 
 <style scoped>
-
+Header {
+    display: none;
+}
 </style>

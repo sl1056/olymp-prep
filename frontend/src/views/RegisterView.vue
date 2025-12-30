@@ -30,8 +30,8 @@
                 <p>Пароль</p><br>
                 <input type="password" className="enter"><br><br>
             </div>
-            <div className="enter_button">
-                <button>Зарегистрироваться</button>
+            <div>
+                <button className="enter_button">Зарегистрироваться</button>
             </div>
         </div>
         <Info></Info>
@@ -39,5 +39,7 @@
 </template>
 
 <style scoped>
-
+header {
+    display: none;
+}
 </style>
