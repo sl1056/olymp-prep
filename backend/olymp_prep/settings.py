@@ -60,7 +60,6 @@ FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN")
 if FRONTEND_ORIGIN:
     CORS_ALLOWED_ORIGINS = [FRONTEND_ORIGIN]
 else:
-    # Sensible defaults for local Vite dev server
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
