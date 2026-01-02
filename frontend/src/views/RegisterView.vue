@@ -14,18 +14,16 @@
         },
         methods: {
             createUser() {
-                user.push ({
+                this.user.push ({
                     username: this.username,
                     email: this.email,
                     password: this.password
                 })
-                axios({
-                    method: 'post',
-                    url: 'http://localhost:5173/api/auth/register',
-                    data: {
-                        user
-                    }
-                });
+                axios.post('http://localhost:5432/api/auth/register/', {
+                    username: this.username,
+                    email: this.email,
+                    password: this.password
+                })
             }
         }
     }
