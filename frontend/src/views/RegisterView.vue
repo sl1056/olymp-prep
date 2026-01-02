@@ -2,7 +2,27 @@
     import Info from '@/components/Info.vue';
 
     export default {
-        components: { Info }
+        components: { Info },
+        data() {
+            return {
+                name: '',
+                email: '',
+                password: '',
+                user: [],
+            }
+        },
+        created() {
+            axios.get("http://localhost:5173/api/auth/register/")
+                .then(response => {
+                    this.user = response.data
+                })
+                .catch(error => {
+                    console.error(error) 
+                })  
+        },
+        methods: {
+ 
+        }
     }
 </script>
 
@@ -20,15 +40,15 @@
             </div>
             <div className="input">
                 <p>Имя</p><br>
-                <input type="text" className="enter"><br>
+                <input type="text" className="enter" v-model="name"><br>
             </div>
             <div className="input">
                 <p>Email</p><br>
-                <input type="email" className="enter"><br>
+                <input type="email" className="enter" v-model="email"><br>
             </div>
             <div className="input">
                 <p>Пароль</p><br>
-                <input type="password" className="enter"><br><br>
+                <input type="password" className="enter" v-model="password"><br><br>
             </div>
             <div>
                 <button className="enter_button">Зарегистрироваться</button>
