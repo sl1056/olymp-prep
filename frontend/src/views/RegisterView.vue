@@ -1,27 +1,32 @@
 <script>
     import Info from '@/components/Info.vue';
+    import axios from 'axios';
 
     export default {
         components: { Info },
         data() {
             return {
-                name: '',
+                username: '',
                 email: '',
                 password: '',
                 user: [],
             }
         },
-        created() {
-            axios.get("http://localhost:5173/api/auth/register/")
-                .then(response => {
-                    this.user = response.data
-                })
-                .catch(error => {
-                    console.error(error) 
-                })  
-        },
         methods: {
- 
+            createUser() {
+                user.push ({
+                    username: this.username,
+                    email: this.email,
+                    password: this.password
+                })
+                axios({
+                    method: 'post',
+                    url: 'http://localhost:5173/api/auth/register',
+                    data: {
+                        user
+                    }
+                });
+            }
         }
     }
 </script>
@@ -40,7 +45,7 @@
             </div>
             <div className="input">
                 <p>Имя</p><br>
-                <input type="text" className="enter" v-model="name"><br>
+                <input type="text" className="enter" v-model="username"><br>
             </div>
             <div className="input">
                 <p>Email</p><br>
@@ -51,7 +56,7 @@
                 <input type="password" className="enter" v-model="password"><br><br>
             </div>
             <div>
-                <button className="enter_button">Зарегистрироваться</button>
+                <button className="enter_button" onclick="location.href='/'">Зарегистрироваться</button>
             </div>
         </div>
         <Info></Info>

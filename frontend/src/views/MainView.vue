@@ -1,8 +1,9 @@
 <script>
     import Header from '@/components/Header.vue';
+    import axios from 'axios';
 
     export default {
-        components: { Header }
+        components: { Header },
     }
 </script>
 
@@ -14,6 +15,7 @@
     </head>
     <body>
         <Header></Header>
+        {{ this.user }}
     </body>
 </template>
 
