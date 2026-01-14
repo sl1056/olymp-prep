@@ -41,7 +41,7 @@ INSTALLED_APPS = [
 
     'corsheaders',
     'rest_framework',
-    'users',
+    'users.apps.UsersConfig'
 ]
 
 REST_FRAMEWORK = {
