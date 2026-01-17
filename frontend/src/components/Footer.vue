@@ -14,6 +14,12 @@
     </footer>
 </template>
 
+<script>
+export default {
+    name: "Footer",
+}
+</script>
+
 <style>
 footer {
     display: flex;
@@ -29,7 +35,7 @@ footer {
     font-size: 32px;
     font-family: "Anonymous Pro", monospace;
     color: aliceblue;
-    margin-left: 250px;
+    margin-left: 175px;
     margin-top: 70px;
 }
 

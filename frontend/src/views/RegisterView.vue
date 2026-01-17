@@ -14,12 +14,12 @@
         },
         methods: {
             createUser() {
-                axios.post('http://localhost:8000/api/auth/register/', {
+                axios.post('http://localhost:5173/register', {
                     username: this.username,
                     email: this.email,
                     password: this.password
-                })
-                location.href='/'
+                });
+                location.href='/';
             }
         }
     }
@@ -50,7 +50,7 @@
                 <input type="password" className="enter" v-model="password"><br><br>
             </div>
             <div>
-                <button className="enter_button" onclick="createUser()">Зарегистрироваться</button>
+                <button className="enter_button" onclick="createUser">Зарегистрироваться</button>
             </div>
         </div>
         <Info></Info>

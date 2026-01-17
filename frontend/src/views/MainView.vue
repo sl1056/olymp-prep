@@ -1,9 +1,10 @@
 <script>
     import Header from '@/components/Header.vue';
+    import Footer from '@/components/Footer.vue';
     import axios from 'axios';
 
     export default {
-        components: { Header },
+        components: { Header, Footer },
     }
 </script>
 
@@ -37,8 +38,9 @@
             диплом, льготы при поступлении в вуз, развитие <br>мышления</p>
             </div>                    
         </div>
-
+        <Footer></Footer>
     </body>
+    
 
 </template>
 
@@ -48,15 +50,13 @@ body {
     background-color: rgb(250, 246, 239);
     margin: 0;
     padding: 0;
-    width: 100vw;
+    width: 100%;
     max-width: 100%;
     overflow-x: hidden;
     
-    min-height: 100vh;
 }
 
 .content {
-            min-height: 1500px;
             padding: 50px 20px;
             font-family: Arial, sans-serif;
             max-width: 800px;
