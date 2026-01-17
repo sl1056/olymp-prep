@@ -1,0 +1,36 @@
+<template>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" >
+        <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@100..900&family=Anonymous+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Inter:opsz,wght@14..32,501&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" >
+        <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@100..900&family=Anonymous+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Inter:opsz,wght@14..32,501&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    </head>
+    <footer>
+        <p class="pHeader">8-800-555-35-35</p>
+        <p class="pHeader">pomoshi.net@mail.ru</p>
+        <a href="https://github.com/sl1056/olymp-prep" target="_blank" class="pHeader">GitHub</a>
+    </footer>
+</template>
+
+<style>
+footer {
+    display: flex;
+    width: 1881px;
+    height: 200px;
+    background-color: rgb(38, 38, 38);  /* Цвет заливки */
+    text-align: center;
+    
+}
+
+.pHeader{
+    display:inline-block;
+    font-size: 32px;
+    font-family: "Anonymous Pro", monospace;
+    color: aliceblue;
+    margin-left: 250px;
+    margin-top: 70px;
+}
+
+</style>
