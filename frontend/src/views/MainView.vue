@@ -77,32 +77,23 @@
 
         <div class="container">
         <section class="courses-section">
-            <h2 class="section-title">Школьные предметы</h2>
+            <h2 class="section-title">Олимпиадные предметы</h2>
             <div class="courses-grid">
+                <!-- Математические предметы -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-calculator"></i></div>
                     <div class="course-name"><a class="href_on_card">Математика</a></div>
-                </div>
-                <div class="course-card">
-                    <div class="course-icon"><i class="fas fa-language"></i></div>
-                    <div class="course-name"><a class="href_on_card">Русский язык</a></div>
-                </div>
-                <div class="course-card">
-                    <div class="course-icon"><i class="fas fa-globe-americas"></i></div>
-                    <div class="course-name"><a class="href_on_card">Английский язык</a></div>
-                </div>
-                <div class="course-card">
-                    <div class="course-icon"><i class="fas fa-leaf"></i></div>
-                    <div class="course-name"><a class="href_on_card">Окружающий мир</a></div>
                 </div>
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-shapes"></i></div>
                     <div class="course-name"><a class="href_on_card">Геометрия</a></div>
                 </div>
                 <div class="course-card">
-                    <div class="course-icon"><i class="fas fa-book-open"></i></div>
-                    <div class="course-name"><a class="href_on_card">Литература</a></div>
+                    <div class="course-icon"><i class="fas fa-infinity"></i></div>
+                    <div class="course-name"><a class="href_on_card">Дискретная математика</a></div>
                 </div>
+                
+                <!-- Естественные науки -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-atom"></i></div>
                     <div class="course-name"><a class="href_on_card">Физика</a></div>
@@ -112,6 +103,58 @@
                     <div class="course-name"><a class="href_on_card">Химия</a></div>
                 </div>
                 <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-dna"></i></div>
+                    <div class="course-name"><a class="href_on_card">Биология</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-mountain"></i></div>
+                    <div class="course-name"><a class="href_on_card">Экология</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-globe-europe"></i></div>
+                    <div class="course-name"><a class="href_on_card">География</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-satellite"></i></div>
+                    <div class="course-name"><a class="href_on_card">Астрономия</a></div>
+                </div>
+                
+                <!-- Филология и языки -->
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-language"></i></div>
+                    <div class="course-name"><a class="href_on_card">Русский язык</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="course-name"><a class="href_on_card">Литература</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-globe-americas"></i></div>
+                    <div class="course-name"><a class="href_on_card">Английский язык</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-flag"></i></div>
+                    <div class="course-name"><a class="href_on_card">Немецкий язык</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-comments"></i></div>
+                    <div class="course-name"><a class="href_on_card">Французский язык</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-torii-gate"></i></div>
+                    <div class="course-name"><a class="href_on_card">Китайский язык</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-feather-alt"></i></div>
+                    <div class="course-name"><a class="href_on_card">Испанский язык</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-scroll"></i></div>
+                    <div class="course-name"><a class="href_on_card">Латинский язык</a></div>
+                </div>
+                
+                <!-- Гуманитарные науки -->
+                <div class="course-card">
                     <div class="course-icon"><i class="fas fa-landmark"></i></div>
                     <div class="course-name"><a class="href_on_card">История</a></div>
                 </div>
@@ -120,12 +163,48 @@
                     <div class="course-name"><a class="href_on_card">Обществознание</a></div>
                 </div>
                 <div class="course-card">
-                    <div class="course-icon"><i class="fas fa-dna"></i></div>
-                    <div class="course-name"><a class="href_on_card">Биология</a></div>
+                    <div class="course-icon"><i class="fas fa-balance-scale"></i></div>
+                    <div class="course-name"><a class="href_on_card">Право</a></div>
                 </div>
                 <div class="course-card">
-                    <div class="course-icon"><i class="fas fa-globe-europe"></i></div>
-                    <div class="course-name"><a class="href_on_card">География</a></div>
+                    <div class="course-icon"><i class="fas fa-coins"></i></div>
+                    <div class="course-name"><a class="href_on_card">Экономика</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="course-name"><a class="href_on_card">Финансовая грамотность</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-palette"></i></div>
+                    <div class="course-name"><a class="href_on_card">Искусство (МХК)</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fa-solid fa-gears"></i></div>
+                    <div class="course-name"><a class="href_on_card">Технология</a></div>
+                </div>
+                
+                <!-- Информатика и технологии -->
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-laptop-code"></i></div>
+                    <div class="course-name"><a class="href_on_card">Информатика</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-robot"></i></div>
+                    <div class="course-name"><a class="href_on_card">Робототехника</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-brain"></i></div>
+                    <div class="course-name"><a class="href_on_card">Искусственный интеллект</a></div>
+                </div>
+                
+                <!-- Другие -->
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-heartbeat"></i></div>
+                    <div class="course-name"><a class="href_on_card">Физкультура</a></div>
+                </div>
+                <div class="course-card">
+                    <div class="course-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="course-name"><a class="href_on_card">ОБЖ</a></div>
                 </div>
             </div>
         </section>
