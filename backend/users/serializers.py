@@ -3,7 +3,12 @@ from django.contrib.auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import Profile
+from .models import Task
 
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = '__all__'
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:

@@ -3,12 +3,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import viewsets
+from .models import Task
+from .serializers import TaskSerializer
 from .serializers import (
     RegisterSerializer,
     ProfileSerializer,
     LoginSerializer
 )
 
+class TaskViewSet(viewsets.R)
 class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
