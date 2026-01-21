@@ -12,7 +12,10 @@ from .serializers import (
     LoginSerializer
 )
 
-class TaskViewSet(viewsets.R)
+class TaskViewSet(viewsets.ReadOnlyModeViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+
 class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
