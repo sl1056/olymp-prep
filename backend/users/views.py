@@ -12,7 +12,7 @@ from .serializers import (
     LoginSerializer
 )
 
-class TaskViewSet(viewsets.ReadOnlyModeViewSet):
+class TaskViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
 
