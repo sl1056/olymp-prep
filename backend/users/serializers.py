@@ -1,19 +1,16 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 from .models import Profile
-from .models import Task
-
-class TaskSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Task
-        fields = '__all__'
 
 class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
     class Meta:
         model = Profile
         fields = (
+            'username',
+            'email',
             'rating',
             'solved_tasks',
             'correct_answers',
