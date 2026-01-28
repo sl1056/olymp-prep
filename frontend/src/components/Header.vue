@@ -15,13 +15,30 @@
             <button style="background-color: rgb(216, 226, 228);">Меню</button>
             <button>PvP</button>
         </div>
-        <button className="enter_button" style="float: right;">Войти</button>
+        <button className="enter_button" style="float: right;" @click="Enter">Войти</button>
     </header>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
     name: "Header",
+    methods: {
+        Enter() {
+            location.href='/auth';
+        }
+    },
+    getUser() {
+        try {
+            const response = axios.get('http://localhost:8000/api/auth/profile/', {
+                "username": this.username,
+                "email": this.email,
+                "password": this.password
+            });
+        } catch (err) {}
+        location.href='/';
+    }
 }
 </script>
 

@@ -1,8 +1,25 @@
 <script>
     import Info from '@/components/Info.vue';
+    import axios from 'axios';
 
     export default {
-        components: { Info }
+        components: { Info },
+        data() {
+            return {
+                email: '',
+                password: '',
+            }
+        },
+        methods: {
+            async createUser() {
+                try {
+                    const response = await axios.post('http://localhost:8000/api/auth/login/', {
+                        "email": this.email,
+                        "password": this.password
+                    });
+                } catch (err) {}
+            }
+        }
     }
 </script>
 
@@ -20,18 +37,18 @@
             </div>
             <div className="input">
                 <p>Email</p><br>
-                <input type="email" className="enter"><br>
+                <input type="email" className="enter" v-model="email"><br>
             </div>
             <div className="input">
                 <p>Пароль</p><br>
-                <input type="password" className="enter"><br><br>
+                <input type="password" className="enter" v-model="password"><br><br>
             </div>
             <div className="add">
                 <input type="checkbox" id="checkbox"> <a className ="checkboxA">Запомнить меня</a>
                 <a href="/forgot" className="forgotten"> Забыли пароль?</a>
             </div>
             <div>
-                <button className="enter_button">Войти</button>
+                <button className="enter_button" @click="createUser">Войти</button>
             </div>
         </div>
         <Info></Info>
