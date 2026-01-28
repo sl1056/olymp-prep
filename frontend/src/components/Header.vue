@@ -12,7 +12,7 @@
         <a>sasa and<br>olympiad</a>
         <div className="buttons">
             <button>Предметы</button>
-            <button style="background-color: rgb(216, 226, 228);">Меню</button>
+            <button style="background-color: #7896AA">Меню</button>
             <button>PvP</button>
         </div>
         <button className="enter_button" style="float: right;">Войти</button>
@@ -56,7 +56,7 @@ a {
 button {
     font-family: "Roboto", normal;
     border-color: rgb(0, 0, 0);
-    background-color: rgb(255, 255, 255);
+    background-color: #7896AA;
     line-height: 0;
     font-size: 26px;
     width: 12%;
