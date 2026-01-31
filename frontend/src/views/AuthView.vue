@@ -14,10 +14,23 @@
             async createUser() {
                 try {
                     const response = await axios.post('http://localhost:8000/api/auth/login/', {
-                        "email": this.email,
+                        "username": this.username,
                         "password": this.password
                     });
-                } catch (err) {}
+                    // Здесь сервер ДОЛЖЕН вернуть токен
+                    const token = response.data.access; // или response.data.token
+
+                    // Сохраняем токен
+                    localStorage.setItem('authToken', token);
+
+                    // Настраиваем axios для автоматической отправки токена
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                    // Перенаправляем на защищенную страницу
+                    this.$router.push('/');
+                } catch (err) {
+                // обработка ошибок
+                }
             }
         }
     }
@@ -36,8 +49,8 @@
                 <a href="/register" className="passive">Регистрация</a><br>
             </div>
             <div className="input">
-                <p>Email</p><br>
-                <input type="email" className="enter" v-model="email"><br>
+                <p>Имя</p><br>
+                <input type="text" className="enter" v-model="username"><br>
             </div>
             <div className="input">
                 <p>Пароль</p><br>

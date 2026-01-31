@@ -2,9 +2,40 @@
     import Header from '@/components/Header.vue';
     import Footer from '@/components/Footer.vue';
     import axios from 'axios';
+    import HeaderEntered from '@/components/HeaderEntered.vue';
 
     export default {
-        components: { Header, Footer },
+        components: { Header, Footer, HeaderEntered },
+        data() {
+            return {
+                userData: null,
+                isLoading: true
+            }
+        },
+        async created() {
+            await this.fetchUserData();
+        },
+        methods: {
+            async fetchUserData() {
+                try {
+                    // Автоматически добавится заголовок Authorization через interceptor
+                    const response = await axios.get('http://localhost:8000/api/auth/profile/');
+                    this.userData = response.data;
+                } catch (err) {
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+        
+            logout() {
+                // Очистка токена
+                localStorage.removeItem('authToken');
+                delete axios.defaults.headers.common['Authorization'];
+
+                // Перенаправление на страницу логина
+                this.$router.push('/auth');
+            }
+        }
     }
 </script>
 
@@ -18,11 +49,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         
-
     </head>
     <body>
-        <Header></Header>
-        {{ this.user }}       
+        
+        <div v-if="userData==Null"><Header></Header></div>
+        <div v-else>
+            <header>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/800px-NASA_logo.svg.png" height="88" width="108">
+                <a class="header-a">sasa and<br>olympiad</a>
+                <div className="buttons">
+                    <button class="header-button">Предметы</button>
+                    <button style="background-color: rgb(216, 226, 228);" class="header-button">Меню</button>
+                    <button class="header-button">PvP</button>
+                </div>
+                <button className="header-enter_button" style="float: right;" @click="Enter">{{ userData?.username }}</button>
+            </header>
+        </div>
         <p class="text1">Платформа для подготовки <br> к олимпиадам <br>sasa and olympiad</p>
         <h5>мы подготавливаем школьников 5-11 класса, для участия в олимпиадах</h5>
 
@@ -33,6 +75,11 @@
                 </button>
             </a>
         </div>
+
+        <div v-if="isLoading">Загрузка...</div>
+        <div v-else>
+            <h1>Добро пожаловать, {{ userData?.username }}</h1>
+        </div>      
 
        <div class="content">
             <div class="highlight">
@@ -462,4 +509,5 @@ h1 {
     font-weight: 600;
     text-align: center;
 }
+
 </style>
