@@ -12,33 +12,16 @@
         <a>sasa and<br>olympiad</a>
         <div className="buttons">
             <button>Предметы</button>
-            <button style="background-color: rgb(216, 226, 228);">Меню</button>
+            <button style="background-color: #7896AA">Меню</button>
             <button>PvP</button>
         </div>
-        <button className="enter_button" style="float: right;" @click="Enter">Войти</button>
+        <button className="enter_button" style="float: right;">Войти</button>
     </header>
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
     name: "Header",
-    methods: {
-        Enter() {
-            location.href='/auth';
-        }
-    },
-    getUser() {
-        try {
-            const response = axios.get('http://localhost:8000/api/auth/profile/', {
-                "username": this.username,
-                "email": this.email,
-                "password": this.password
-            });
-        } catch (err) {}
-        location.href='/';
-    }
 }
 </script>
 
@@ -48,6 +31,7 @@ header {
     display: flex;
     width: 1900px;
     height: 200px;
+    background-color: rgb(250, 246, 239);
 }
 .left {
     text-align: left;
@@ -72,7 +56,7 @@ a {
 button {
     font-family: "Roboto", normal;
     border-color: rgb(0, 0, 0);
-    background-color: rgb(255, 255, 255);
+    background-color: #7896AA;
     line-height: 0;
     font-size: 26px;
     width: 12%;
@@ -90,7 +74,7 @@ button {
     width: 1900px;
 }
 .enter_button {
-    margin-right: 10px;
+    margin-right: 1%;
     font-family: "Anonymous Pro", monospace;
     appearance: none;
     border-color: rgb(34, 71, 98);
