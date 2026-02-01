@@ -12,16 +12,41 @@
         <a>sasa and<br>olympiad</a>
         <div className="buttons">
             <button>Предметы</button>
-            <button style="background-color: #7896AA">Меню</button>
+            <button style="background-color: rgb(216, 226, 228);">Меню</button>
             <button>PvP</button>
         </div>
-        <button className="enter_button" style="float: right;">Войти</button>
+        <h1>{{ userData?.username }}</h1>
+        <button className="enter_button" style="float: right;" @click="Enter">{{ userData?.username }}</button>
     </header>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-    name: "Header",
+    name: "HeaderEntered",
+    methods: {
+        Enter() {
+            location.href='/auth';
+        }
+    },
+    async created() {
+        await this.getUser();
+    },
+    async getUser() {
+        try {
+            // Автоматически добавится заголовок Authorization через interceptor
+            const response = await axios.get('http://localhost:8000/api/auth/profile/');
+            this.userData = response.data;
+        } catch (err) {
+            if (err.response && err.response.status === 401) {
+                // Токен истек или недействителен
+                this.$router.push('/auth');
+            }
+        } finally {
+            this.isLoading = false;
+        }
+    }
 }
 </script>
 
@@ -31,7 +56,6 @@ header {
     display: flex;
     width: 1900px;
     height: 200px;
-    background-color: rgb(250, 246, 239);
 }
 .left {
     text-align: left;
@@ -56,7 +80,7 @@ a {
 button {
     font-family: "Roboto", normal;
     border-color: rgb(0, 0, 0);
-    background-color: #7896AA;
+    background-color: rgb(255, 255, 255);
     line-height: 0;
     font-size: 26px;
     width: 12%;
@@ -74,7 +98,7 @@ button {
     width: 1900px;
 }
 .enter_button {
-    margin-right: 1%;
+    margin-right: 10px;
     font-family: "Anonymous Pro", monospace;
     appearance: none;
     border-color: rgb(34, 71, 98);

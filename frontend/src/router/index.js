@@ -15,6 +15,11 @@ const router = createRouter({
       component: () => import('../views/AuthView.vue'),
     },
     {
+      path: '/Profile',
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue'),
+    },
+    {
       path: '/register',
       name: 'register',
       // route level code-splitting
@@ -24,5 +29,15 @@ const router = createRouter({
     },
   ],
 })
+
+router.beforeEach((to, from, next) => {
+    const isAuthenticated = localStorage.getItem('authToken');
+    
+    if (to.meta.requiresAuth && !isAuthenticated) {
+        next('/auth');
+    } else {
+        next();
+    }
+});
 
 export default router

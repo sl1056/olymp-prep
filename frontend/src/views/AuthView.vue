@@ -1,8 +1,38 @@
 <script>
     import Info from '@/components/Info.vue';
+    import axios from 'axios';
 
     export default {
-        components: { Info }
+        components: { Info },
+        data() {
+            return {
+                email: '',
+                password: '',
+            }
+        },
+        methods: {
+            async createUser() {
+                try {
+                    const response = await axios.post('http://localhost:8000/api/auth/login/', {
+                        "username": this.username,
+                        "password": this.password
+                    });
+                    // Здесь сервер ДОЛЖЕН вернуть токен
+                    const token = response.data.access; // или response.data.token
+
+                    // Сохраняем токен
+                    localStorage.setItem('authToken', token);
+
+                    // Настраиваем axios для автоматической отправки токена
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                    // Перенаправляем на защищенную страницу
+                    this.$router.push('/');
+                } catch (err) {
+                // обработка ошибок
+                }
+            }
+        }
     }
 </script>
 
@@ -19,19 +49,19 @@
                 <a href="/register" className="passive">Регистрация</a><br>
             </div>
             <div className="input">
-                <p>Email</p><br>
-                <input type="email" className="enter"><br>
+                <p>Имя</p><br>
+                <input type="text" className="enter" v-model="username"><br>
             </div>
             <div className="input">
                 <p>Пароль</p><br>
-                <input type="password" className="enter"><br><br>
+                <input type="password" className="enter" v-model="password"><br><br>
             </div>
             <div className="add">
                 <input type="checkbox" id="checkbox"> <a className ="checkboxA">Запомнить меня</a>
                 <a href="/forgot" className="forgotten"> Забыли пароль?</a>
             </div>
             <div>
-                <button className="enter_button">Войти</button>
+                <button className="enter_button" @click="createUser">Войти</button>
             </div>
         </div>
         <Info></Info>
