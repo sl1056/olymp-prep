@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'corsheaders',
     'rest_framework',
+    'django_filters',
     'users.apps.UsersConfig',
     'tasks.apps.TasksConfig',
 ]
