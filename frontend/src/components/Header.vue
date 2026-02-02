@@ -15,13 +15,18 @@
             <button style="background-color: #7896AA">Меню</button>
             <button>PvP</button>
         </div>
-        <button className="enter_button" style="float: right;">Войти</button>
+        <button className="enter_button" style="float: right;" @click="Enter">Войти</button>
     </header>
 </template>
 
 <script>
 export default {
     name: "Header",
+    methods: {
+        Enter() {
+            location.href='/auth';
+        }
+    }
 }
 </script>
 

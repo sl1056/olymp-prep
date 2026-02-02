@@ -26,7 +26,11 @@
                     this.isLoading = false;
                 }
             },
-        
+
+            profileLink() {
+                this.$router.push('/profile')
+            },
+
             logout() {
                 // Очистка токена
                 localStorage.removeItem('authToken');
@@ -59,10 +63,10 @@
                 <a class="header-a">sasa and<br>olympiad</a>
                 <div className="buttons">
                     <button class="header-button">Предметы</button>
-                    <button style="background-color: rgb(216, 226, 228);" class="header-button">Меню</button>
+                    <button style="background-color: #7896AA" class="header-button">Меню</button>
                     <button class="header-button">PvP</button>
                 </div>
-                <button className="header-enter_button" style="float: right;" @click="Enter">{{ userData?.username }}</button>
+                <button className="header-enter_button" style="float: right;" @click="profileLink">{{ userData?.username }}</button>
             </header>
         </div>
         <p class="text1">Платформа для подготовки <br> к олимпиадам <br>sasa and olympiad</p>

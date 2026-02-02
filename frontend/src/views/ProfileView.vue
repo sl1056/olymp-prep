@@ -1,16 +1,17 @@
 <script setup>
-
-////////////
-// Сделал коменты
-// чтоб хоть что-то в этом коде понятно было
-////////////
-  
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import axios from 'axios'
+
+const router = useRouter()
 
 // Реактивные данные
-const userName = ref('Name')
+const userData = ref(null)
+const token = ref(null)
+const isLoading = ref(true)
+const userName = ref('')
 const isModalOpen = ref(false)
 const newName = ref('')
 
@@ -31,7 +32,7 @@ const avatarColors = {
 
 // Вычисляемые свойства для аватара
 const avatarStyle = computed(() => {
-  const firstLetter = userName.value.charAt(0).toUpperCase()
+  const firstLetter = userName.value?.charAt(0)?.toUpperCase() || ''
   const colors = avatarColors[firstLetter] || avatarColors['default']
   
   return {
@@ -40,7 +41,7 @@ const avatarStyle = computed(() => {
 })
 
 const avatarLetter = computed(() => {
-  return userName.value.charAt(0).toUpperCase()
+  return userName.value?.charAt(0)?.toUpperCase() || '?'
 })
 
 // Методы
@@ -71,17 +72,54 @@ const saveName = () => {
   closeEditModal()
 }
 
-const logout = () => {
-  if (confirm('Вы уверены, что хотите выйти?')) {
-    alert('Вы успешно вышли из профиля')
-    // Здесь можно добавить редирект на главную страницу
-    // Например: router.push('/')
+const fetchUserData = async () => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      router.push('/auth')
+      return
+    }
+
+    const response = await axios.get('http://localhost:8000/api/auth/profile/')
+    
+    userData.value = response.data
+    userName.value = response.data.username || ''
+  } catch (err) {
+    console.error('Ошибка при загрузке данных пользователя:', err)
+  } finally {
+    isLoading.value = false
   }
 }
+
+const logout = () => {
+  // Очистка токена
+  localStorage.removeItem('authToken')
+  // Перенаправление на страницу логина
+  router.push('/auth')
+}
+
+const profileLink = () => {
+  router.push('/profile')
+}
+
+onMounted(() => {
+  fetchUserData()
+})
 </script>
 
 <template>
-  <Header />
+  <div>
+      <header>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/800px-NASA_logo.svg.png" height="88" width="108">
+          <a class="header-a">sasa and<br>olympiad</a>
+          <div className="buttons">
+              <button class="header-button">Предметы</button>
+              <button style="background-color: #7896AA" class="header-button">Меню</button>
+              <button class="header-button">PvP</button>
+          </div>
+          <button className="header-enter_button" style="float: right;" @click="profileLink">{{ userData?.username }}</button>
+      </header>
+  </div>
   
   <div class="profile-page">
     <!-- Основная карточка профиля -->
@@ -96,7 +134,7 @@ const logout = () => {
         
         <div class="user-info">
           <div class="name-section">
-            <h1 class="user-name">{{ userName }}</h1>
+            <h1 class="user-name">{{ userData?.username }}</h1>
             <button class="edit-btn" @click="openEditModal" title="Редактировать имя">
               <i class="fas fa-edit"></i>
             </button>
@@ -131,7 +169,7 @@ const logout = () => {
             </div>
             <div class="info-content">
               <div class="info-label">Email</div>
-              <div class="info-value">Mihail@mail.ru</div>
+              <div class="info-value">{{userData?.email}}</div>
             </div>
           </div>
           
