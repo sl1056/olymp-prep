@@ -120,7 +120,7 @@
             >
               <div class="task-header">
                 <div class="task-title">
-                  <span class="task-number">{{ task.id }}</span>
+                  <span class="task-number">№{{ task.id }}</span>
                   <span :class="['difficulty', task.difficulty]">{{ getDifficultyText(task.difficulty) }}</span>
                 </div>
                 <span class="task-type">{{ task.topic }}</span>
@@ -196,7 +196,7 @@ export default {
   
   data() {
     return {
-      activeSubject: 'mathematics',
+      activeSubject: 'math',
       currentPage: 1,
       selectedDifficulties: ['any'],
       sortBy: 'number',
@@ -210,57 +210,72 @@ export default {
   computed: {
     subjects() {
       return [
-        { id: 'mathematics', name: 'МАТЕМАТИКА' },
-        { id: 'geometry', name: 'ГЕОМЕТРИЯ' },
-        { id: 'discrete_math', name: 'ДИСКРЕТНАЯ МАТЕМАТИКА' },
-        { id: 'physics', name: 'ФИЗИКА' },
-        { id: 'chemistry', name: 'ХИМИЯ' },
-        { id: 'biology', name: 'БИОЛОГИЯ' },
-        { id: 'ecology', name: 'ЭКОЛОГИЯ' },
-        { id: 'geography', name: 'ГЕОГРАФИЯ' },
-        { id: 'astronomy', name: 'АСТРОНОМИЯ' },
-        { id: 'russian', name: 'РУССКИЙ ЯЗЫК' },
-        { id: 'literature', name: 'ЛИТЕРАТУРА' },
-        { id: 'english', name: 'АНГЛИЙСКИЙ ЯЗЫК' },
-        { id: 'german', name: 'НЕМЕЦКИЙ ЯЗЫК' },
-        { id: 'french', name: 'ФРАНЦУЗСКИЙ ЯЗЫК' },
-        { id: 'chinese', name: 'КИТАЙСКИЙ ЯЗЫК' },
-        { id: 'spanish', name: 'ИСПАНСКИЙ ЯЗЫК' },
-        { id: 'latin', name: 'ЛАТИНСКИЙ ЯЗЫК' },
-        { id: 'history', name: 'ИСТОРИЯ' },
-        { id: 'social', name: 'ОБЩЕСТВОЗНАНИЕ' },
+        { id: 'math', name: 'МАТЕМАТИКА' },
+        { id: 'geom', name: 'ГЕОМЕТРИЯ' },
+        { id: 'd math', name: 'ДИСКРЕТНАЯ МАТЕМАТИКА' },
+        { id: 'phys', name: 'ФИЗИКА' },
+        { id: 'chem', name: 'ХИМИЯ' },
+        { id: 'bio', name: 'БИОЛОГИЯ' },
+        { id: 'eco', name: 'ЭКОЛОГИЯ' },
+        { id: 'geo', name: 'ГЕОГРАФИЯ' },
+        { id: 'astro', name: 'АСТРОНОМИЯ' },
+        { id: 'rus lang', name: 'РУССКИЙ ЯЗЫК' },
+        { id: 'rus lit', name: 'ЛИТЕРАТУРА' },
+        { id: 'eng lang', name: 'АНГЛИЙСКИЙ ЯЗЫК' },
+        { id: 'g lang', name: 'НЕМЕЦКИЙ ЯЗЫК' },
+        { id: 'fr lang', name: 'ФРАНЦУЗСКИЙ ЯЗЫК' },
+        { id: 'ch lang', name: 'КИТАЙСКИЙ ЯЗЫК' },
+        { id: 'sp lang', name: 'ИСПАНСКИЙ ЯЗЫК' },
+        { id: 'lat lang', name: 'ЛАТИНСКИЙ ЯЗЫК' },
+        { id: 'hist', name: 'ИСТОРИЯ' },
+        { id: 's st', name: 'ОБЩЕСТВОЗНАНИЕ' },
         { id: 'law', name: 'ПРАВО' },
-        { id: 'economics', name: 'ЭКОНОМИКА' },
-        { id: 'financial_literacy', name: 'ФИНАНСОВАЯ ГРАМОТНОСТЬ' },
-        { id: 'art', name: 'ИСКУССТВО (МХК)' },
-        { id: 'technology', name: 'ТЕХНОЛОГИЯ' },
-        { id: 'informatics', name: 'ИНФОРМАТИКА' },
-        { id: 'robotics', name: 'РОБОТОТЕХНИКА' },
+        { id: 'econ', name: 'ЭКОНОМИКА' },
+        { id: 'fin lit', name: 'ФИНАНСОВАЯ ГРАМОТНОСТЬ' },
+        { id: 'arts', name: 'ИСКУССТВО (МХК)' },
+        { id: 'tech', name: 'ТЕХНОЛОГИЯ' },
+        { id: 'pc sci', name: 'ИНФОРМАТИКА' },
+        { id: 'robot', name: 'РОБОТОТЕХНИКА' },
         { id: 'ai', name: 'ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ' },
         { id: 'pe', name: 'ФИЗКУЛЬТУРА' },
-        { id: 'obzh', name: 'ОБЖ' }
+        { id: 'obzr', name: 'ОБЖ' }
       ]
     },
     
     // Фильтруем задания по предмету и сложности
     filteredTasks() {
       let filtered = this.allTasks.filter(task => {
-        // Фильтрация по предмету
-        if (task.subject && task.subject == this.activeSubject) {
-          return true;
+        // Фильтрация по предмету - проверяем, выбран ли какой-то предмет
+        if (this.activeSubject && this.activeSubject !== 'all' && this.activeSubject !== 'Любой') {
+          // Приводим значения к нижнему регистру для сравнения без учета регистра
+          const taskSubject = (task.subject || '').toString().toLowerCase();
+          const activeSubject = this.activeSubject.toString().toLowerCase();
+
+          // Проверяем точное совпадение
+          if (taskSubject !== activeSubject) {
+            return false; // Если предмет не совпадает, сразу отбрасываем
+          }
         }
-        
+
         // Фильтрация по сложности
-        if (this.selectedDifficulties.includes('any')) {
+        // Если выбрана опция "любая сложность", пропускаем фильтрацию
+        if (this.selectedDifficulties && this.selectedDifficulties.includes('any') || 
+            this.selectedDifficulties.includes('Любая') ||
+            !this.selectedDifficulties || this.selectedDifficulties.length === 0) {
           return true;
         }
-        
-        // Предполагаем, что сложность хранится в поле 'difficulty_level'
-        // или 'complexity'. Нужно проверить структуру данных от сервера
-        const taskDifficulty = task.difficulty || task.complexity || 'medium';
-        return this.selectedDifficulties.includes(taskDifficulty);
+
+        // Определяем сложность задачи с учетом разных возможных полей
+        const taskDifficulty = (task.difficulty || task.complexity || task.difficulty_level || 'medium').toString().toLowerCase();
+
+        // Проверяем, есть ли выбранная сложность в массиве
+        const hasDifficulty = this.selectedDifficulties.some(diff => 
+          diff.toString().toLowerCase() === taskDifficulty
+        );
+
+        return hasDifficulty;
       });
-      
+  
       return this.sortTasks(filtered);
     },
     
@@ -315,25 +330,27 @@ export default {
         this.isLoading = false;
       }
     },
+
+    
     
     // Метод для отладки - мок данные
     getDifficultyText(difficulty) {
-    const difficultyMap = {
-      'easy': 'Лёгкая',
-      'medium': 'Средняя',
-      'hard': 'Сложная'
-    };
-    return difficultyMap[difficulty] || difficulty;
-  },
+      const difficultyMap = {
+        'easy': 'Лёгкая',
+        'medium': 'Средняя',
+        'hard': 'Сложная'
+      };
+      return difficultyMap[difficulty] || difficulty;
+    },
   
-  getDifficultyClass(difficulty) {
-    // Нормализуем значение для CSS класса
-    const normalized = difficulty.toLowerCase();
-    if (['easy', 'medium', 'hard'].includes(normalized)) {
-      return normalized;
-    }
-    return 'medium'; // значение по умолчанию
-  },
+    getDifficultyClass(difficulty) {
+      // Нормализуем значение для CSS класса
+      const normalized = difficulty.toLowerCase();
+      if (['easy', 'medium', 'hard'].includes(normalized)) {
+        return normalized;
+      }
+      return 'medium'; // значение по умолчанию
+    },
     
     getSubjectName(subjectId) {
       const subject = this.subjects.find(s => s.id === subjectId);
