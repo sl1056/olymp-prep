@@ -49,8 +49,8 @@ class SubmitTaskView(APIView):
         profile.save()
 
         message = "Верно!" if is_correct else "Неверно."
-
         return Response({
             "correct": is_correct,
-            "message": message
+            "message": message,
+            "correct_answer": task.correct_answer  # временная заглушка,потом проверять конкретно по режиму
         })
