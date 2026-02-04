@@ -109,6 +109,7 @@
 
       <!-- Список заданий -->
       <div class="tasks">
+
         <div class="tasks-list">
           <!-- Отсортированные задания для текущей страницы -->
           <div v-if="currentPageTasks.length > 0">
@@ -119,10 +120,10 @@
             >
               <div class="task-header">
                 <div class="task-title">
-                  <span class="task-number">{{ task.number }}</span>
-                  <span :class="['difficulty', task.difficulty]">{{ task.difficultyText }}</span>
+                  <span class="task-number">№{{ task.id }}</span>
+                  <span :class="['difficulty', task.difficulty]">{{ getDifficultyText(task.difficulty) }}</span>
                 </div>
-                <span class="task-type">{{ task.type }}</span>
+                <span class="task-type">{{ task.topic }}</span>
               </div>
               
               <div class="task-text">
@@ -188,170 +189,192 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'StudyView',
   
   data() {
     return {
-      activeSubject: 'mathematics',
+      activeSubject: 'math',
       currentPage: 1,
       selectedDifficulties: ['any'],
       sortBy: 'number',
       showAnswer: {},
-      allTasks: [
-        {
-          id: 'task1',
-          number: 'ЗАДАНИЕ №9053',
-          difficulty: 'medium',
-          difficultyText: 'СРЕДНЯЯ',
-          type: 'Тип 1',
-          text: 'Определите, атомы каких двух из указанных в ряду элементов имеют на внешнем энергетическом уровне шесть электронов. Запишите в поле ответа номера выбранных элементов.',
-          answer: '2, 4',
-          originalPage: 1
-        },
-        {
-          id: 'task2',
-          number: 'ЗАДАНИЕ №9331',
-          difficulty: 'easy',
-          difficultyText: 'ЛЁГКАЯ',
-          type: 'Тип 2',
-          text: 'Из указанных в ряду химических элементов выберите три элемента, которые в Периодической системе химических элементов Д.И. Менделеева находятся в одном периоде. Расположите выбранные элементы в порядке возрастания их неметаллических свойств. Запишите в поле ответа номера выбранных элементов в нужной последовательности.',
-          answer: '3, 1, 5',
-          originalPage: 1
-        },
-        {
-          id: 'task3',
-          number: 'ЗАДАНИЕ №9062',
-          difficulty: 'hard',
-          difficultyText: 'СЛОЖНАЯ',
-          type: 'Тип 1',
-          text: 'Определите, атомы каких двух из указанных в ряду элементов имеют на внешнем энергетическом уровне семь электронов. Запишите в поле ответа номера выбранных элементов.',
-          answer: '1, 7',
-          originalPage: 2
-        },
-        {
-          id: 'task4',
-          number: 'ЗАДАНИЕ №9349',
-          difficulty: 'medium',
-          difficultyText: 'СРЕДНЯЯ',
-          type: 'Тип 2',
-          text: 'Из указанных в ряду химических элементов выберите три элемента, которые в Периодической системе химических элементов Д.И. Менделеева находятся в одном периоде. Расположите выбранные элементы в порядке возрастания их неметаллических свойств. Запишите в поле ответа номера выбранных элементов в нужной последовательности.',
-          answer: '2, 4, 6',
-          originalPage: 2
-        },
-        {
-          id: 'task5',
-          number: 'ЗАДАНИЕ №101',
-          difficulty: 'easy',
-          difficultyText: 'ЛЁГКАЯ',
-          type: 'Тип 1',
-          text: 'Решите уравнение: 3x + 7 = 16. Найдите значение x.',
-          answer: 'x = 3',
-          originalPage: 3
-        },
-        {
-          id: 'task6',
-          number: 'ЗАДАНИЕ №102',
-          difficulty: 'medium',
-          difficultyText: 'СРЕДНЯЯ',
-          type: 'Тип 1',
-          text: 'Тело движется со скоростью 10 м/с. Какое расстояние оно пройдет за 5 секунд?',
-          answer: '50 метров',
-          originalPage: 3
-        }
-      ]
+      allTasks: [],
+      isLoading: false,
+      error: null
     }
   },
   
   computed: {
     subjects() {
       return [
-        { id: 'mathematics', name: 'МАТЕМАТИКА' },
-        { id: 'geometry', name: 'ГЕОМЕТРИЯ' },
-        { id: 'discrete_math', name: 'ДИСКРЕТНАЯ МАТЕМАТИКА' },
-        { id: 'physics', name: 'ФИЗИКА' },
-        { id: 'chemistry', name: 'ХИМИЯ' },
-        { id: 'biology', name: 'БИОЛОГИЯ' },
-        { id: 'ecology', name: 'ЭКОЛОГИЯ' },
-        { id: 'geography', name: 'ГЕОГРАФИЯ' },
-        { id: 'astronomy', name: 'АСТРОНОМИЯ' },
-        { id: 'russian', name: 'РУССКИЙ ЯЗЫК' },
-        { id: 'literature', name: 'ЛИТЕРАТУРА' },
-        { id: 'english', name: 'АНГЛИЙСКИЙ ЯЗЫК' },
-        { id: 'german', name: 'НЕМЕЦКИЙ ЯЗЫК' },
-        { id: 'french', name: 'ФРАНЦУЗСКИЙ ЯЗЫК' },
-        { id: 'chinese', name: 'КИТАЙСКИЙ ЯЗЫК' },
-        { id: 'spanish', name: 'ИСПАНСКИЙ ЯЗЫК' },
-        { id: 'latin', name: 'ЛАТИНСКИЙ ЯЗЫК' },
-        { id: 'history', name: 'ИСТОРИЯ' },
-        { id: 'social', name: 'ОБЩЕСТВОЗНАНИЕ' },
+        { id: 'math', name: 'МАТЕМАТИКА' },
+        { id: 'geom', name: 'ГЕОМЕТРИЯ' },
+        { id: 'd math', name: 'ДИСКРЕТНАЯ МАТЕМАТИКА' },
+        { id: 'phys', name: 'ФИЗИКА' },
+        { id: 'chem', name: 'ХИМИЯ' },
+        { id: 'bio', name: 'БИОЛОГИЯ' },
+        { id: 'eco', name: 'ЭКОЛОГИЯ' },
+        { id: 'geo', name: 'ГЕОГРАФИЯ' },
+        { id: 'astro', name: 'АСТРОНОМИЯ' },
+        { id: 'rus lang', name: 'РУССКИЙ ЯЗЫК' },
+        { id: 'rus lit', name: 'ЛИТЕРАТУРА' },
+        { id: 'eng lang', name: 'АНГЛИЙСКИЙ ЯЗЫК' },
+        { id: 'g lang', name: 'НЕМЕЦКИЙ ЯЗЫК' },
+        { id: 'fr lang', name: 'ФРАНЦУЗСКИЙ ЯЗЫК' },
+        { id: 'ch lang', name: 'КИТАЙСКИЙ ЯЗЫК' },
+        { id: 'sp lang', name: 'ИСПАНСКИЙ ЯЗЫК' },
+        { id: 'lat lang', name: 'ЛАТИНСКИЙ ЯЗЫК' },
+        { id: 'hist', name: 'ИСТОРИЯ' },
+        { id: 's st', name: 'ОБЩЕСТВОЗНАНИЕ' },
         { id: 'law', name: 'ПРАВО' },
-        { id: 'economics', name: 'ЭКОНОМИКА' },
-        { id: 'financial_literacy', name: 'ФИНАНСОВАЯ ГРАМОТНОСТЬ' },
-        { id: 'art', name: 'ИСКУССТВО (МХК)' },
-        { id: 'technology', name: 'ТЕХНОЛОГИЯ' },
-        { id: 'informatics', name: 'ИНФОРМАТИКА' },
-        { id: 'robotics', name: 'РОБОТОТЕХНИКА' },
+        { id: 'econ', name: 'ЭКОНОМИКА' },
+        { id: 'fin lit', name: 'ФИНАНСОВАЯ ГРАМОТНОСТЬ' },
+        { id: 'arts', name: 'ИСКУССТВО (МХК)' },
+        { id: 'tech', name: 'ТЕХНОЛОГИЯ' },
+        { id: 'pc sci', name: 'ИНФОРМАТИКА' },
+        { id: 'robot', name: 'РОБОТОТЕХНИКА' },
         { id: 'ai', name: 'ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ' },
         { id: 'pe', name: 'ФИЗКУЛЬТУРА' },
-        { id: 'obzh', name: 'ОБЖ' }
+        { id: 'obzr', name: 'ОБЖ' }
       ]
     },
     
-    // Все отфильтрованные и отсортированные задания
-    filteredAndSortedTasks() {
-      // Фильтруем задания по сложности
-      let filteredTasks = this.allTasks.filter(task => {
-        if (this.selectedDifficulties.includes('any')) {
+    // Фильтруем задания по предмету и сложности
+    filteredTasks() {
+      let filtered = this.allTasks.filter(task => {
+        // Фильтрация по предмету - проверяем, выбран ли какой-то предмет
+        if (this.activeSubject && this.activeSubject !== 'all' && this.activeSubject !== 'Любой') {
+          // Приводим значения к нижнему регистру для сравнения без учета регистра
+          const taskSubject = (task.subject || '').toString().toLowerCase();
+          const activeSubject = this.activeSubject.toString().toLowerCase();
+
+          // Проверяем точное совпадение
+          if (taskSubject !== activeSubject) {
+            return false; // Если предмет не совпадает, сразу отбрасываем
+          }
+        }
+
+        // Фильтрация по сложности
+        // Если выбрана опция "любая сложность", пропускаем фильтрацию
+        if (this.selectedDifficulties && this.selectedDifficulties.includes('any') || 
+            this.selectedDifficulties.includes('Любая') ||
+            !this.selectedDifficulties || this.selectedDifficulties.length === 0) {
           return true;
         }
-        return this.selectedDifficulties.includes(task.difficulty);
+
+        // Определяем сложность задачи с учетом разных возможных полей
+        const taskDifficulty = (task.difficulty || task.complexity || task.difficulty_level || 'medium').toString().toLowerCase();
+
+        // Проверяем, есть ли выбранная сложность в массиве
+        const hasDifficulty = this.selectedDifficulties.some(diff => 
+          diff.toString().toLowerCase() === taskDifficulty
+        );
+
+        return hasDifficulty;
       });
-      
-      // Сортируем задания
-      return this.sortTasks(filteredTasks);
+  
+      return this.sortTasks(filtered);
     },
     
-    // Задания для текущей страницы
     currentPageTasks() {
       const tasksPerPage = 2;
       const startIndex = (this.currentPage - 1) * tasksPerPage;
       const endIndex = startIndex + tasksPerPage;
       
-      return this.filteredAndSortedTasks.slice(startIndex, endIndex);
+      return this.filteredTasks.slice(startIndex, endIndex);
     },
     
-    // Общее количество страниц
     totalPages() {
       const tasksPerPage = 2;
-      return Math.ceil(this.filteredAndSortedTasks.length / tasksPerPage);
+      return Math.ceil(this.filteredTasks.length / tasksPerPage) || 1;
     }
   },
   
+  created() {
+    this.getTasks();
+  },
+  
   methods: {
+    async getTasks() {
+      this.isLoading = true;
+      this.error = null;
+      
+      try {
+        // Получаем задания с сервера
+        const response = await axios.get('http://localhost:8000/api/tasks/');
+        
+        // Проверяем структуру данных
+        console.log('Полученные задания:', response.data);
+        
+        // В зависимости от структуры ответа:
+        if (Array.isArray(response.data)) {
+          this.allTasks = response.data;
+        } else if (response.data.results) {
+          // Если используется пагинация на сервере
+          this.allTasks = response.data.results;
+        } else if (response.data.tasks) {
+          this.allTasks = response.data.tasks;
+        } else {
+          this.allTasks = [];
+        }
+        
+      } catch (err) {
+        console.error('Ошибка при загрузке заданий:', err);
+        this.error = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
+        // Для тестирования можно использовать мок данные:
+        this.allTasks = this.getMockTasks();
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    
+    
+    // Метод для отладки - мок данные
+    getDifficultyText(difficulty) {
+      const difficultyMap = {
+        'easy': 'Лёгкая',
+        'medium': 'Средняя',
+        'hard': 'Сложная'
+      };
+      return difficultyMap[difficulty] || difficulty;
+    },
+  
+    getDifficultyClass(difficulty) {
+      // Нормализуем значение для CSS класса
+      const normalized = difficulty.toLowerCase();
+      if (['easy', 'medium', 'hard'].includes(normalized)) {
+        return normalized;
+      }
+      return 'medium'; // значение по умолчанию
+    },
+    
     getSubjectName(subjectId) {
-      const subject = this.subjects.find(s => s.id === subjectId)
-      return subject ? subject.name : 'МАТЕМАТИКА'
+      const subject = this.subjects.find(s => s.id === subjectId);
+      return subject ? subject.name : 'МАТЕМАТИКА';
     },
     
     searchTask() {
-      alert('Поиск задания')
+      alert('Поиск задания');
     },
     
     prevPage() {
       if (this.currentPage > 1) {
-        this.currentPage--
+        this.currentPage--;
       }
     },
     
     nextPage() {
       if (this.currentPage < this.totalPages) {
-        this.currentPage++
+        this.currentPage++;
       }
     },
     
     goToPage(page) {
-      this.currentPage = page
+      this.currentPage = page;
     },
     
     toggleAnswer(taskId) {
@@ -359,39 +382,61 @@ export default {
     },
     
     sortTasks(tasks) {
+      if (!tasks || !Array.isArray(tasks)) {
+        return [];
+      }
+      
+      const tasksCopy = [...tasks];
+      
       if (this.sortBy === 'number') {
-        return [...tasks].sort((a, b) => {
-          const numA = parseInt(a.number.match(/\d+/)[0]);
-          const numB = parseInt(b.number.match(/\d+/)[0]);
+        return tasksCopy.sort((a, b) => {
+          // Извлекаем числа из строки
+          const getNumber = (str) => {
+            const match = str ? str.toString().match(/\d+/g) : null;
+            return match ? parseInt(match[0]) : 0;
+          };
+          
+          const numA = getNumber(a.number || a.task_number || '0');
+          const numB = getNumber(b.number || b.task_number || '0');
           return numA - numB;
         });
       } else if (this.sortBy === 'difficulty') {
         const difficultyOrder = { easy: 1, medium: 2, hard: 3 };
-        return [...tasks].sort((a, b) => {
-          const diffA = difficultyOrder[a.difficulty];
-          const diffB = difficultyOrder[b.difficulty];
+        return tasksCopy.sort((a, b) => {
+          const diffA = difficultyOrder[a.difficulty] || 2;
+          const diffB = difficultyOrder[b.difficulty] || 2;
           
           if (diffA !== diffB) {
             return diffA - diffB;
           }
           // Если сложность одинаковая, сортируем по номеру
-          const numA = parseInt(a.number.match(/\d+/)[0]);
-          const numB = parseInt(b.number.match(/\d+/)[0]);
+          const getNumber = (str) => {
+            const match = str ? str.toString().match(/\d+/g) : null;
+            return match ? parseInt(match[0]) : 0;
+          };
+          const numA = getNumber(a.number || a.task_number || '0');
+          const numB = getNumber(b.number || b.task_number || '0');
           return numA - numB;
         });
       } else if (this.sortBy === 'type') {
-        return [...tasks].sort((a, b) => {
-          const typeCompare = a.type.localeCompare(b.type);
+        return tasksCopy.sort((a, b) => {
+          const typeA = a.type || a.category || '';
+          const typeB = b.type || b.category || '';
+          const typeCompare = typeA.localeCompare(typeB);
           if (typeCompare !== 0) {
             return typeCompare;
           }
           // Если тип одинаковый, сортируем по номеру
-          const numA = parseInt(a.number.match(/\d+/)[0]);
-          const numB = parseInt(b.number.match(/\d+/)[0]);
+          const getNumber = (str) => {
+            const match = str ? str.toString().match(/\d+/g) : null;
+            return match ? parseInt(match[0]) : 0;
+          };
+          const numA = getNumber(a.number || a.task_number || '0');
+          const numB = getNumber(b.number || b.task_number || '0');
           return numA - numB;
         });
       }
-      return tasks;
+      return tasksCopy;
     }
   }
 }

@@ -12,7 +12,7 @@
         <a>sasa and<br>olympiad</a>
         <div className="buttons">
             <button>Предметы</button>
-            <button style="background-color: rgb(216, 226, 228);">Меню</button>
+            <button style="background-color: #7896AA">Меню</button>
             <button>PvP</button>
         </div>
         <h1>{{ userData?.username }}</h1>

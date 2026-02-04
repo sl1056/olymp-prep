@@ -1,20 +1,116 @@
+<template>
+  <div>
+    <head>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+    <HeaderEnter />
+    
+    <div class="profile-page">
+      <div class="profile-card">
+        <div class="profile-header">
+          <div class="avatar-container">
+            <div class="avatar" :style="avatarStyle">
+              {{ avatarLetter }}
+            </div>
+          </div>
+          
+          <div class="user-info">
+            <div class="name-section">
+              <h1 class="user-name">{{ userData?.username }}</h1>
+              <button class="edit-btn" @click="openEditModal" title="Редактировать имя">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="user-id">ID: 2562341</div>
+          </div>
+        </div>
+        
+        <div class="profile-content">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-number">91</div>
+              <div class="stat-label">Выполнено тестов</div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-number percentage">87%</div>
+              <div class="stat-label">Правильных тестов</div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-number">181</div>
+              <div class="stat-label">Сражений в PvP</div>
+            </div>
+          </div>
+          
+          <div class="info-section">
+            <div class="info-item">
+              <div class="info-icon">
+                <i class="fas fa-envelope"></i>
+              </div>
+              <div class="info-content">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{userData?.email}}</div>
+              </div>
+            </div>
+            
+            <div class="info-item">
+              <div class="info-icon">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <div class="info-content">
+                <div class="info-label">Дата регистрации</div>
+                <div class="info-value">15 января 2023</div>
+              </div>
+            </div>
+          </div>
+          
+          <button class="logout-btn" @click="logout">
+            <i class="fas fa-sign-out-alt"></i> Выйти
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-overlay" v-if="isModalOpen" @click.self="closeEditModal">
+        <div class="modal">
+          <h2>Изменить имя</h2>
+          <p>Введите новое имя пользователя</p>
+          
+          <div class="form-group">
+            <input 
+              type="text" 
+              class="form-input" 
+              v-model="newName"
+              maxlength="20" 
+              placeholder="Введите имя..."
+              @keyup.enter="saveName"
+            >
+            <div class="char-counter">{{ newName.length }}/20</div>
+          </div>
+          
+          <div class="modal-buttons">
+            <button class="modal-btn secondary" @click="closeEditModal">Отмена</button>
+            <button class="modal-btn primary" @click="saveName">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import HeaderEnter from '@/components/HeaderEnter.vue'
+import axios from 'axios'
 
-////////////
-// Сделал коменты
-// чтоб хоть что-то в этом коде понятно было
-////////////
-  
-import { ref, computed } from 'vue'
-import Header from '@/components/Header.vue'
-import Footer from '@/components/Footer.vue'
+const router = useRouter()
 
-// Реактивные данные
-const userName = ref('Name')
+const userData = ref(null)
+const isLoading = ref(true)
 const isModalOpen = ref(false)
 const newName = ref('')
 
-// Цветовая палитра для аватаров
 const avatarColors = {
   'B': ['#FFD166', '#FF9E6D'],
   'A': ['#118AB2', '#06D6A0'],
@@ -29,9 +125,9 @@ const avatarColors = {
   'default': ['#FFD166', '#FF9E6D']
 }
 
-// Вычисляемые свойства для аватара
 const avatarStyle = computed(() => {
-  const firstLetter = userName.value.charAt(0).toUpperCase()
+  const username = userData.value?.username || ''
+  const firstLetter = username?.charAt(0)?.toUpperCase() || ''
   const colors = avatarColors[firstLetter] || avatarColors['default']
   
   return {
@@ -40,12 +136,11 @@ const avatarStyle = computed(() => {
 })
 
 const avatarLetter = computed(() => {
-  return userName.value.charAt(0).toUpperCase()
+  return userData.value?.username?.charAt(0)?.toUpperCase() || '?'
 })
 
-// Методы
 const openEditModal = () => {
-  newName.value = userName.value
+  newName.value = userData.value?.username || ''
   isModalOpen.value = true
 }
 
@@ -67,117 +162,42 @@ const saveName = () => {
     return
   }
   
-  userName.value = name
+  userData.value.username = name
   closeEditModal()
 }
 
-const logout = () => {
-  if (confirm('Вы уверены, что хотите выйти?')) {
-    alert('Вы успешно вышли из профиля')
-    // Здесь можно добавить редирект на главную страницу
-    // Например: router.push('/')
+const fetchUserData = async () => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      router.push('/auth')
+      return
+    }
+
+    const response = await axios.get('http://localhost:8000/api/auth/profile/', {
+      headers: {
+        'Authorization': `Token ${token}`
+      }
+    })
+    
+    userData.value = response.data
+  } catch (err) {
+    console.error('Ошибка при загрузке данных пользователя:', err)
+    router.push('/auth')
+  } finally {
+    isLoading.value = false
   }
 }
+
+const logout = () => {
+  localStorage.removeItem('authToken')
+  router.push('/auth')
+}
+
+onMounted(() => {
+  fetchUserData()
+})
 </script>
-
-<template>
-  <Header />
-  
-  <div class="profile-page">
-    <!-- Основная карточка профиля -->
-    <div class="profile-card">
-      <!-- Шапка профиля -->
-      <div class="profile-header">
-        <div class="avatar-container">
-          <div class="avatar" :style="avatarStyle">
-            {{ avatarLetter }}
-          </div>
-        </div>
-        
-        <div class="user-info">
-          <div class="name-section">
-            <h1 class="user-name">{{ userName }}</h1>
-            <button class="edit-btn" @click="openEditModal" title="Редактировать имя">
-              <i class="fas fa-edit"></i>
-            </button>
-          </div>
-          <div class="user-id">ID: 2562341</div>
-        </div>
-      </div>
-      
-      <!-- Основной контент -->
-      <div class="profile-content">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-number">91</div>
-            <div class="stat-label">Выполнено тестов</div>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-number percentage">87%</div>
-            <div class="stat-label">Правильных тестов</div>
-          </div>
-          
-          <div class="stat-card">
-            <div class="stat-number">181</div>
-            <div class="stat-label">Сражений в PvP</div>
-          </div>
-        </div>
-        
-        <div class="info-section">
-          <div class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-envelope"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">Email</div>
-              <div class="info-value">Mihail@mail.ru</div>
-            </div>
-          </div>
-          
-          <div class="info-item">
-            <div class="info-icon">
-              <i class="fas fa-calendar-alt"></i>
-            </div>
-            <div class="info-content">
-              <div class="info-label">Дата регистрации</div>
-              <div class="info-value">15 января 2023</div>
-            </div>
-          </div>
-        </div>
-        
-        <button class="logout-btn" @click="logout">
-          <i class="fas fa-sign-out-alt"></i> Выйти
-        </button>
-      </div>
-    </div>
-
-    <!-- Модальное окно редактирования имени -->
-    <div class="modal-overlay" v-if="isModalOpen" @click.self="closeEditModal">
-      <div class="modal">
-        <h2>Изменить имя</h2>
-        <p>Введите новое имя пользователя</p>
-        
-        <div class="form-group">
-          <input 
-            type="text" 
-            class="form-input" 
-            v-model="newName"
-            maxlength="20" 
-            placeholder="Введите имя..."
-            @keyup.enter="saveName"
-          >
-          <div class="char-counter">{{ newName.length }}/20</div>
-        </div>
-        
-        <div class="modal-buttons">
-          <button class="modal-btn secondary" @click="closeEditModal">Отмена</button>
-          <button class="modal-btn primary" @click="saveName">Сохранить</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 html, body {
@@ -194,13 +214,12 @@ html, body {
 
 .profile-page {
   background: #FAF6EF;
-  min-height: calc(100vh - 160px);
+  min-height: calc(100vh - 100px);
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 30px;
-  margin-top: -4%;
-  /* Добавил это */
+  margin-top: 0;
   width: 100%;
   overflow: hidden;
 }
@@ -215,7 +234,6 @@ html, body {
   border: 1px solid #E8E2D8;
 }
 
-/* Шапка профиля */
 .profile-header {
   background: #224762;
   padding: 50px 70px;
@@ -242,7 +260,6 @@ html, body {
   border: 4px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   margin: 0 auto;
-  /* ДОБАВИЛ ШРИФТ НА АВАТАР */
   font-family: 'Alexandria', sans-serif;
 }
 
@@ -263,7 +280,6 @@ html, body {
   font-weight: 700;
   margin: 0;
   color: white;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Alexandria', sans-serif;
 }
 
@@ -294,15 +310,12 @@ html, body {
   font-weight: 300;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.9);
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Inter', sans-serif;
 }
 
-/* Основной контент */
 .profile-content {
   padding: 50px 70px;
   background: #FAF6EF;
-  /* ОСНОВНОЙ ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Inter', sans-serif;
 }
 
@@ -333,14 +346,12 @@ html, body {
   font-weight: 700;
   color: #224762;
   margin-bottom: 10px;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Alexandria', sans-serif;
 }
 
 .percentage {
   color: #06D6A0;
   font-size: 36px;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Alexandria', sans-serif;
 }
 
@@ -348,11 +359,9 @@ html, body {
   font-size: 16px;
   color: #5A6C7D;
   font-weight: 500;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Inter', sans-serif;
 }
 
-/* Информация профиля */
 .info-section {
   background: white;
   border-radius: 18px;
@@ -393,7 +402,6 @@ html, body {
   font-size: 14px;
   color: #7A8A9B;
   margin-bottom: 5px;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Inter', sans-serif;
 }
 
@@ -401,11 +409,9 @@ html, body {
   font-size: 18px;
   font-weight: 600;
   color: #2C3E50;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Alexandria', sans-serif;
 }
 
-/* Кнопка выхода */
 .logout-btn {
   width: 100%;
   padding: 20px;
@@ -430,7 +436,6 @@ html, body {
   background: #D43A5F;
 }
 
-/* Модальное окно */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -473,7 +478,6 @@ html, body {
   margin-bottom: 30px;
   line-height: 1.5;
   font-size: 16px;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Inter', sans-serif;
 }
 
@@ -506,7 +510,6 @@ html, body {
   font-size: 12px;
   color: #7A8A9B;
   margin-top: 5px;
-  /* ШРИФТ КАК В ПРИМЕРЕ */
   font-family: 'Inter', sans-serif;
 }
 
@@ -546,5 +549,21 @@ html, body {
 
 .modal-btn.secondary:hover {
   background: #F0EBE2;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

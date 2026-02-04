@@ -15,13 +15,13 @@ const router = createRouter({
       component: () => import('../views/AuthView.vue'),
     },
     {
-      path: '/Profile',
+      path: '/profile',
       name: 'profile',
       component: () => import('../views/ProfileView.vue'),
     },
     {
-      path: '/StudyNot',
-      name: 'studyNot',
+      path: '/tasks',
+      name: 'tasks',
       component: () => import('../views/StudyViewNotAnswer.vue'),
     },
     {

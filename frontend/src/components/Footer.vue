@@ -25,7 +25,7 @@ footer {
     display: flex;
     width: 1881px;
     height: 200px;
-    background-color: rgb(38, 38, 38);  /* Цвет заливки */
+    background-color: rgb(38, 38, 38);
     text-align: center;
     
 }

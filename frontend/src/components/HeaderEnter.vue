@@ -21,25 +21,24 @@
       </div>
       
       <div class="right-section">
-        <button class="auth-btn" @click="Enter">Войти</button>
+        <button class="auth-btn" @click="goToProfile">{{ userData?.username || 'Профиль' }}</button>
       </div>
-      
+
       <button class="mobile-menu-toggle" @click="toggleMobileMenu">
         ☰
       </button>
     </div>
-    
+
     <div class="mobile-menu-overlay" :class="{ 'active': isMobileMenuOpen }" @click="closeMobileMenu">
       <div class="mobile-menu" @click.stop>
         <div class="mobile-menu-header">
-          <span class="mobile-brand-name" @click="goToHome" style="cursor: pointer;">Vincere</span>
+          <span class="mobile-brand-name">Vincere</span>
           <button class="mobile-menu-close" @click="closeMobileMenu">×</button>
         </div>
         <div class="mobile-menu-buttons">
-
-          <button class="mobile-nav-btn" @click="goToTraining">Тренинг</button>
-          <button class="mobile-nav-btn" :class="{ active: $route.path === '/' }" @click="goToHome">Главная</button>
-          <button class="mobile-nav-btn" @click="goToPvP">PvP</button>
+          <button class="nav-btn" @click="goToTraining">Тренинг</button>
+          <button class="nav-btn" :class="{ active: $route.path === '/' }" @click="goToHome">Главная</button>
+          <button class="nav-btn" @click="goToPvP">PvP</button>
           <button class="mobile-auth-btn" @click="goToProfile">{{ userData?.username || 'Профиль' }}</button>
         </div>
       </div>
@@ -52,20 +51,42 @@ import axios from 'axios';
 import { useRouter } from 'vue-router';
 
 export default {
-  name: "Header",
+  name: "HeaderEnter",
   data() {
     return {
-      isMobileMenuOpen: false
+      isMobileMenuOpen: false,
+      userData: null,
+      isLoading: false
     };
   },
-  mounted() {
+  async mounted() {
     window.addEventListener('resize', this.handleResize);
     this.handleResize();
+    await this.fetchUserData();
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.handleResize);
   },
   methods: {
+    async fetchUserData() {
+      try {
+        this.isLoading = true;
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          const response = await axios.get('http://localhost:8000/api/auth/profile/', {
+            headers: {
+              'Authorization': `Token ${token}`
+            }
+          });
+          this.userData = response.data;
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке данных пользователя:', err);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
     goToHome() {
       this.closeMobileMenu();
       this.$router.push('/');
@@ -84,6 +105,11 @@ export default {
     goToAuth() {
       this.closeMobileMenu();
       this.$router.push('/auth');
+    },
+    
+    goToProfile() {
+      this.closeMobileMenu();
+      this.$router.push('/profile');
     },
     
     toggleMobileMenu() {
@@ -348,6 +374,7 @@ export default {
   margin-top: 20px;
 }
 
+/* Адаптивность */
 @media (max-width: 1400px) {
   .nav-buttons {
     gap: 80px;
@@ -592,36 +619,6 @@ export default {
   
   .mobile-menu-toggle {
     top: 50px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .header {
-    background-color: #1a1a1a;
-  }
-  
-  .brand-name,
-  .mobile-brand-name {
-    color: #ffffff;
-  }
-  
-  .nav-btn {
-    background-color: #2c3e50;
-    color: #ffffff;
-    border-color: #ffffff;
-  }
-  
-  .auth-btn {
-    background-color: #1e3a5c;
-    border-color: #1e3a5c;
-  }
-  
-  .mobile-menu {
-    background-color: #1a1a1a;
-  }
-  
-  .mobile-menu-header {
-    border-bottom-color: #333;
   }
 }
 </style>
