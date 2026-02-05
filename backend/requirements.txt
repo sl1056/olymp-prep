@@ -4,7 +4,6 @@ djangorestframework-simplejwt
 django-filter
 django-cors-headers
 psycopg2-binary
-daphne
 redis
 channels
 channels-redis

@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import QuizRoom, Question
+from .models import QuizRoom, Task
 
 class QuizConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -20,7 +20,7 @@ class QuizConsumer(AsyncWebsocketConsumer):
             user = self.scope['user']
             result = await self.process_answer(user, answer)
             
-            # Рассылаем обновление всем в комнате
+            
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -32,7 +32,7 @@ class QuizConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def process_answer(self, user, answer):
         room = QuizRoom.objects.get(room_id=self.room_id)
-        questions = list(room.questions.all())
+        questions = list(room.tasks.all())
         current_q = questions[room.current_question_index]
 
         
