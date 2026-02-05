@@ -1,11 +1,9 @@
 <template>
     <body>
   <div class="page">
-    <!-- Левая колонка с предметами -->
     <div class="sidebar">
       <div class="sidebar-title">ОЛИМПИАДНЫЕ ПРЕДМЕТЫ</div>
       
-      <!-- Фильтр по сложности -->
       <div class="difficulty-filter">
         <div class="filter-title">СЛОЖНОСТЬ</div>
         <div class="filter-options">
@@ -45,7 +43,6 @@
         </div>
       </div>
       
-      <!-- Сортировка -->
       <div class="sidebar-sorting">
         <div class="sort-title">СОРТИРОВКА</div>
         <div class="sort-options">
@@ -90,9 +87,7 @@
       </div>
     </div>
 
-    <!-- Правая колонка с контентом -->
     <div class="content">
-      <!-- Верхняя панель -->
       <div class="header">
         <div class="title-section">
           <h1>{{ getSubjectName(activeSubject) }}</h1>
@@ -107,11 +102,9 @@
         </div>
       </div>
 
-      <!-- Список заданий -->
       <div class="tasks">
 
         <div class="tasks-list">
-          <!-- Отсортированные задания для текущей страницы -->
           <div v-if="currentPageTasks.length > 0">
             <div 
               v-for="task in currentPageTasks" 
@@ -146,14 +139,12 @@
             </div>
           </div>
           
-          <!-- Сообщение если нет заданий -->
           <div v-else class="no-tasks-message">
             <p>Нет заданий, соответствующих выбранным фильтрам</p>
           </div>
         </div>
       </div>
 
-      <!-- Пагинация(типо крутой типо знаю слово такое) -->
       <div class="pagination">
         <button 
           class="page-btn prev" 
@@ -242,33 +233,25 @@ export default {
       ]
     },
     
-    // Фильтруем задания по предмету и сложности
     filteredTasks() {
       let filtered = this.allTasks.filter(task => {
-        // Фильтрация по предмету - проверяем, выбран ли какой-то предмет
         if (this.activeSubject && this.activeSubject !== 'all' && this.activeSubject !== 'Любой') {
-          // Приводим значения к нижнему регистру для сравнения без учета регистра
           const taskSubject = (task.subject || '').toString().toLowerCase();
           const activeSubject = this.activeSubject.toString().toLowerCase();
 
-          // Проверяем точное совпадение
           if (taskSubject !== activeSubject) {
             return false; // Если предмет не совпадает, сразу отбрасываем
           }
         }
 
-        // Фильтрация по сложности
-        // Если выбрана опция "любая сложность", пропускаем фильтрацию
         if (this.selectedDifficulties && this.selectedDifficulties.includes('any') || 
             this.selectedDifficulties.includes('Любая') ||
             !this.selectedDifficulties || this.selectedDifficulties.length === 0) {
           return true;
         }
 
-        // Определяем сложность задачи с учетом разных возможных полей
         const taskDifficulty = (task.difficulty || task.complexity || task.difficulty_level || 'medium').toString().toLowerCase();
 
-        // Проверяем, есть ли выбранная сложность в массиве
         const hasDifficulty = this.selectedDifficulties.some(diff => 
           diff.toString().toLowerCase() === taskDifficulty
         );
@@ -303,17 +286,13 @@ export default {
       this.error = null;
       
       try {
-        // Получаем задания с сервера
         const response = await axios.get('http://localhost:8000/api/tasks/');
         
-        // Проверяем структуру данных
         console.log('Полученные задания:', response.data);
         
-        // В зависимости от структуры ответа:
         if (Array.isArray(response.data)) {
           this.allTasks = response.data;
         } else if (response.data.results) {
-          // Если используется пагинация на сервере
           this.allTasks = response.data.results;
         } else if (response.data.tasks) {
           this.allTasks = response.data.tasks;
@@ -324,7 +303,6 @@ export default {
       } catch (err) {
         console.error('Ошибка при загрузке заданий:', err);
         this.error = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
-        // Для тестирования можно использовать мок данные:
         this.allTasks = this.getMockTasks();
       } finally {
         this.isLoading = false;
@@ -332,8 +310,7 @@ export default {
     },
 
     
-    
-    // Метод для отладки - мок данные
+
     getDifficultyText(difficulty) {
       const difficultyMap = {
         'easy': 'Лёгкая',
@@ -344,12 +321,11 @@ export default {
     },
   
     getDifficultyClass(difficulty) {
-      // Нормализуем значение для CSS класса
       const normalized = difficulty.toLowerCase();
       if (['easy', 'medium', 'hard'].includes(normalized)) {
         return normalized;
       }
-      return 'medium'; // значение по умолчанию
+      return 'medium';
     },
     
     getSubjectName(subjectId) {
@@ -390,7 +366,6 @@ export default {
       
       if (this.sortBy === 'number') {
         return tasksCopy.sort((a, b) => {
-          // Извлекаем числа из строки
           const getNumber = (str) => {
             const match = str ? str.toString().match(/\d+/g) : null;
             return match ? parseInt(match[0]) : 0;
@@ -409,7 +384,6 @@ export default {
           if (diffA !== diffB) {
             return diffA - diffB;
           }
-          // Если сложность одинаковая, сортируем по номеру
           const getNumber = (str) => {
             const match = str ? str.toString().match(/\d+/g) : null;
             return match ? parseInt(match[0]) : 0;
@@ -426,7 +400,6 @@ export default {
           if (typeCompare !== 0) {
             return typeCompare;
           }
-          // Если тип одинаковый, сортируем по номеру
           const getNumber = (str) => {
             const match = str ? str.toString().match(/\d+/g) : null;
             return match ? parseInt(match[0]) : 0;
@@ -443,7 +416,6 @@ export default {
 </script>
 
 <style scoped>
-/* Базовые стили */
 * {
   margin: 0;
   padding: 0;
@@ -473,7 +445,6 @@ export default {
   -ms-overflow-style: none;
 }
 
-/* ===== ЛЕВАЯ КОЛОНКА - ПРЕДМЕТЫ ===== */
 .sidebar {
   width: 300px;
   background: rgb(250, 246, 239);
@@ -494,7 +465,6 @@ export default {
   letter-spacing: 1px;
 }
 
-/* Фильтр по сложности */
 .difficulty-filter {
   padding: 20px;
   background: #ffffff;
@@ -545,7 +515,6 @@ export default {
   cursor: pointer;
 }
 
-/* Сортировка в сайдбаре */
 .sidebar-sorting {
   padding: 20px;
   background: #ffffff;
@@ -599,7 +568,7 @@ export default {
 .subjects {
   background-color: rgb(250, 246, 239);
   padding: 15px;
-  max-height: calc(100vh - 380px); /* Увеличил высоту для сортировки */
+  max-height: calc(100vh - 380px);
   overflow-y: auto;
 }
 
@@ -633,7 +602,6 @@ export default {
   box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
 }
 
-/* ===== ПРАВАЯ КОЛОНКА - КОНТЕНТ ===== */
 .content {
   background-color: rgb(250, 246, 239);
   flex: 1;
@@ -641,7 +609,6 @@ export default {
   overflow-y: auto;
 }
 
-/* Верхняя панель */
 .header {
   display: flex;
   justify-content: space-between;
@@ -727,7 +694,7 @@ export default {
 .tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 60px; /* Увеличил расстояние между заданиями */
+  gap: 60px;
 }
 
 .task-card {
@@ -737,7 +704,7 @@ export default {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   position: relative;
   overflow: hidden;
-  margin-bottom: 10px; /* Дополнительный отступ снизу */
+  margin-bottom: 10px;
 }
 
 .task-card::before {
@@ -884,7 +851,6 @@ export default {
   line-height: 1.6;
 }
 
-/* Сообщение при отсутствии заданий */
 .no-tasks-message {
   text-align: center;
   padding: 60px;
@@ -899,7 +865,6 @@ export default {
   font-weight: 500;
 }
 
-/* Пагинация */
 .pagination {
   display: flex;
   justify-content: space-between;
@@ -971,7 +936,6 @@ export default {
   box-shadow: 0 6px 16px rgba(30, 136, 229, 0.3);
 }
 
-/* Адаптивность */
 @media (max-width: 1200px) {
   .page {
     flex-direction: column;
