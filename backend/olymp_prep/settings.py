@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'django_filters',
     'users.apps.UsersConfig',
     'tasks.apps.TasksConfig',
-    'channels'
+    'channels',
+    'pvp',
 ]
 
 REST_FRAMEWORK = {
