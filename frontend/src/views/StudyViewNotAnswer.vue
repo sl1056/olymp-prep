@@ -1,414 +1,380 @@
 <template>
-    <body>
-  <div class="page">
-    <div class="sidebar">
-      <div class="sidebar-title">ОЛИМПИАДНЫЕ ПРЕДМЕТЫ</div>
-      
-      <div class="difficulty-filter">
-        <div class="filter-title">СЛОЖНОСТЬ</div>
-        <div class="filter-options">
-          <label class="filter-option">
-            <input 
-              type="checkbox" 
-              v-model="selectedDifficulties" 
-              value="easy"
-            >
-            <span class="filter-label">Лёгкая</span>
-          </label>
-          <label class="filter-option">
-            <input 
-              type="checkbox" 
-              v-model="selectedDifficulties" 
-              value="medium"
-            >
-            <span class="filter-label">Средняя</span>
-          </label>
-          <label class="filter-option">
-            <input 
-              type="checkbox" 
-              v-model="selectedDifficulties" 
-              value="hard"
-            >
-            <span class="filter-label">Сложная</span>
-          </label>
-          <label class="filter-option">
-            <input 
-              type="checkbox" 
-              v-model="selectedDifficulties" 
-              value="any"
-              checked
-            >
-            <span class="filter-label">Любая</span>
-          </label>
-        </div>
-      </div>
-      
-      <div class="sidebar-sorting">
-        <div class="sort-title">СОРТИРОВКА</div>
-        <div class="sort-options">
-          <label class="sort-option">
-            <input 
-              type="radio" 
-              v-model="sortBy" 
-              value="number"
-              checked
-            >
-            <span class="sort-label">По номеру</span>
-          </label>
-          <label class="sort-option">
-            <input 
-              type="radio" 
-              v-model="sortBy" 
-              value="difficulty"
-            >
-            <span class="sort-label">По сложности</span>
-          </label>
-          <label class="sort-option">
-            <input 
-              type="radio" 
-              v-model="sortBy" 
-              value="type"
-            >
-            <span class="sort-label">По типу</span>
-          </label>
-        </div>
-      </div>
-      
-      <div class="subjects">
-        <div 
-          v-for="subject in subjects" 
-          :key="subject.id"
-          class="subject"
-          :class="{ active: activeSubject === subject.id }"
-          @click="activeSubject = subject.id"
-        >
-          <span>{{ subject.name }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="content">
-      <div class="header">
-        <div class="title-section">
-          <h1>{{ getSubjectName(activeSubject) }}</h1>
+  <div class="study-page">
+    <div class="page-wrapper">
+      <aside class="navigation-panel">
+        <div class="panel-header">
+          <h2>ОЛИМПИАДНЫЕ ПРЕДМЕТЫ</h2>
         </div>
         
-        <div class="search-section">
-          <div class="search-label">ПОИСК ПО НОМЕРУ</div>
-          <div class="search-input">
-            <input type="number" placeholder="№ задания">
-            <button @click="searchTask">ПЕРЕЙТИ</button>
+        <div class="filter-block">
+          <h3>СЛОЖНОСТЬ</h3>
+          <div class="filter-list">
+            <label class="filter-item">
+              <input type="checkbox" v-model="selectedDifficulties" value="easy">
+              <span>Лёгкая</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" v-model="selectedDifficulties" value="medium">
+              <span>Средняя</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" v-model="selectedDifficulties" value="hard">
+              <span>Сложная</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" v-model="selectedDifficulties" value="any" checked>
+              <span>Любая</span>
+            </label>
           </div>
         </div>
-      </div>
+        
+        <div class="sort-block">
+          <h3>СОРТИРОВКА</h3>
+          <div class="sort-list">
+            <label class="sort-item">
+              <input type="radio" v-model="sortMethod" value="number" checked>
+              <span>По номеру</span>
+            </label>
+            <label class="sort-item">
+              <input type="radio" v-model="sortMethod" value="difficulty">
+              <span>По сложности</span>
+            </label>
+            <label class="sort-item">
+              <input type="radio" v-model="sortMethod" value="type">
+              <span>По типу</span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="subject-list">
+          <div 
+            v-for="item in subjectList" 
+            :key="item.id"
+            class="subject-item"
+            :class="{ active: currentSubject === item.id }"
+            @click="currentSubject = item.id"
+          >
+            {{ item.name }}
+          </div>
+        </div>
+      </aside>
 
-      <div class="tasks">
+      <main class="main-content">
+        <div class="content-header">
+          <div class="subject-info">
+            <h1>{{ getCurrentSubjectName() }}</h1>
+          </div>
+          
+          <div class="search-tool">
+            <div class="search-label">ПОИСК ПО НОМЕРУ</div>
+            <div class="search-box">
+              <input type="number" placeholder="№ задания">
+              <button @click="findTask">ПЕРЕЙТИ</button>
+            </div>
+          </div>
+        </div>
 
-        <div class="tasks-list">
-          <div v-if="currentPageTasks.length > 0">
-            <div 
-              v-for="task in currentPageTasks" 
-              :key="task.id"
-              class="task-card"
-            >
-              <div class="task-header">
-                <div class="task-title">
-                  <span class="task-number">№{{ task.id }}</span>
-                  <span :class="['difficulty', task.difficulty]">{{ getDifficultyText(task.difficulty) }}</span>
-                </div>
-                <span class="task-type">{{ task.topic }}</span>
-              </div>
-              
-              <div class="task-text">
-                {{ task.text }}
-              </div>
-              
-              <div class="task-answer">
-                <div 
-                  class="show-answer-btn" 
-                  @click="toggleAnswer(task.id)"
-                >
-                  {{ showAnswer[task.id] ? 'Свернуть ответ ▲' : 'Показать ответ ▼' }}
+        <div class="task-container">
+          <div class="task-list">
+            <div v-if="tasksOnPage.length > 0">
+              <div 
+                v-for="item in tasksOnPage" 
+                :key="item.id"
+                class="task-block"
+              >
+                <div class="task-head">
+                  <div class="task-title">
+                    <span class="task-id">№{{ item.id }}</span>
+                    <span :class="['difficulty-mark', item.difficulty]">{{ formatDifficulty(item.difficulty) }}</span>
+                  </div>
+                  <span class="task-category">{{ item.topic }}</span>
                 </div>
                 
-                <div v-if="showAnswer[task.id]" class="answer-content">
-                  <div class="answer-title">Ответ:</div>
-                  <div class="answer-text">{{ task.answer }}</div>
+                <div class="task-description">
+                  {{ item.text }}
+                </div>
+                
+                <div class="answer-section">
+                  <div 
+                    class="toggle-answer" 
+                    @click="toggleAnswerVisibility(item.id)"
+                  >
+                    {{ answerVisible[item.id] ? 'Свернуть ответ ▲' : 'Показать ответ ▼' }}
+                  </div>
+                  
+                  <div v-if="answerVisible[item.id]" class="answer-block">
+                    <div class="answer-label">Ответ:</div>
+                    <div class="answer-value">{{ item.answer }}</div>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            <div v-else class="empty-list">
+              <p>Нет заданий, соответствующих выбранным фильтрам</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="page-controls">
+          <button 
+            class="nav-btn prev" 
+            :disabled="currentPageNumber === 1"
+            @click="goToPrevPage"
+          >
+            ← Назад
+          </button>
+          
+          <div class="page-indicators">
+            <span 
+              v-for="page in totalPageCount" 
+              :key="page"
+              class="page-indicator"
+              :class="{ active: page === currentPageNumber }"
+              @click="selectPage(page)"
+            >
+              {{ page }}
+            </span>
           </div>
           
-          <div v-else class="no-tasks-message">
-            <p>Нет заданий, соответствующих выбранным фильтрам</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="pagination">
-        <button 
-          class="page-btn prev" 
-          :disabled="currentPage === 1"
-          @click="prevPage"
-        >
-          ← Назад
-        </button>
-        
-        <div class="page-numbers">
-          <span 
-            v-for="page in totalPages" 
-            :key="page"
-            class="page-number"
-            :class="{ active: page === currentPage }"
-            @click="goToPage(page)"
+          <button 
+            class="nav-btn next" 
+            :disabled="currentPageNumber === totalPageCount"
+            @click="goToNextPage"
           >
-            {{ page }}
-          </span>
+            Вперед →
+          </button>
         </div>
-        
-        <button 
-          class="page-btn next" 
-          :disabled="currentPage === totalPages"
-          @click="nextPage"
-        >
-          Вперед →
-        </button>
-      </div>
+      </main>
+
+      <button class="main-page-btn" @click="returnHome">
+        <svg class="home-symbol" viewBox="0 0 24 24">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        <span>На главную</span>
+      </button>
     </div>
   </div>
-  </body>
 </template>
 
 <script>
 import axios from 'axios';
 
 export default {
-  name: 'StudyView',
+  name: 'StudyPage',
   
   data() {
     return {
-      activeSubject: 'math',
-      currentPage: 1,
+      currentSubject: 'math',
+      currentPageNumber: 1,
       selectedDifficulties: ['any'],
-      sortBy: 'number',
-      showAnswer: {},
-      allTasks: [],
-      isLoading: false,
-      error: null
+      sortMethod: 'number',
+      answerVisible: {},
+      taskCollection: [],
+      loading: false,
+      fetchError: null
     }
   },
   
   computed: {
-    subjects() {
+    subjectList() {
       return [
         { id: 'math', name: 'МАТЕМАТИКА' },
         { id: 'geom', name: 'ГЕОМЕТРИЯ' },
-        { id: 'd math', name: 'ДИСКРЕТНАЯ МАТЕМАТИКА' },
+        { id: 'd_math', name: 'ДИСКРЕТНАЯ МАТЕМАТИКА' },
         { id: 'phys', name: 'ФИЗИКА' },
         { id: 'chem', name: 'ХИМИЯ' },
         { id: 'bio', name: 'БИОЛОГИЯ' },
         { id: 'eco', name: 'ЭКОЛОГИЯ' },
         { id: 'geo', name: 'ГЕОГРАФИЯ' },
         { id: 'astro', name: 'АСТРОНОМИЯ' },
-        { id: 'rus lang', name: 'РУССКИЙ ЯЗЫК' },
-        { id: 'rus lit', name: 'ЛИТЕРАТУРА' },
-        { id: 'eng lang', name: 'АНГЛИЙСКИЙ ЯЗЫК' },
-        { id: 'g lang', name: 'НЕМЕЦКИЙ ЯЗЫК' },
-        { id: 'fr lang', name: 'ФРАНЦУЗСКИЙ ЯЗЫК' },
-        { id: 'ch lang', name: 'КИТАЙСКИЙ ЯЗЫК' },
-        { id: 'sp lang', name: 'ИСПАНСКИЙ ЯЗЫК' },
-        { id: 'lat lang', name: 'ЛАТИНСКИЙ ЯЗЫК' },
+        { id: 'rus_lang', name: 'РУССКИЙ ЯЗЫК' },
+        { id: 'rus_lit', name: 'ЛИТЕРАТУРА' },
+        { id: 'eng_lang', name: 'АНГЛИЙСКИЙ ЯЗЫК' },
+        { id: 'ger_lang', name: 'НЕМЕЦКИЙ ЯЗЫК' },
+        { id: 'fr_lang', name: 'ФРАНЦУЗСКИЙ ЯЗЫК' },
+        { id: 'chi_lang', name: 'КИТАЙСКИЙ ЯЗЫК' },
+        { id: 'sp_lang', name: 'ИСПАНСКИЙ ЯЗЫК' },
+        { id: 'lat_lang', name: 'ЛАТИНСКИЙ ЯЗЫК' },
         { id: 'hist', name: 'ИСТОРИЯ' },
-        { id: 's st', name: 'ОБЩЕСТВОЗНАНИЕ' },
+        { id: 'soc_st', name: 'ОБЩЕСТВОЗНАНИЕ' },
         { id: 'law', name: 'ПРАВО' },
         { id: 'econ', name: 'ЭКОНОМИКА' },
-        { id: 'fin lit', name: 'ФИНАНСОВАЯ ГРАМОТНОСТЬ' },
+        { id: 'fin_lit', name: 'ФИНАНСОВАЯ ГРАМОТНОСТЬ' },
         { id: 'arts', name: 'ИСКУССТВО (МХК)' },
         { id: 'tech', name: 'ТЕХНОЛОГИЯ' },
-        { id: 'pc sci', name: 'ИНФОРМАТИКА' },
+        { id: 'inf', name: 'ИНФОРМАТИКА' },
         { id: 'robot', name: 'РОБОТОТЕХНИКА' },
         { id: 'ai', name: 'ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ' },
         { id: 'pe', name: 'ФИЗКУЛЬТУРА' },
-        { id: 'obzr', name: 'ОБЖ' }
+        { id: 'obzh', name: 'ОБЖ' }
       ]
     },
     
     filteredTasks() {
-      let filtered = this.allTasks.filter(task => {
-        if (this.activeSubject && this.activeSubject !== 'all' && this.activeSubject !== 'Любой') {
+      let result = this.taskCollection.filter(task => {
+        if (this.currentSubject && this.currentSubject !== 'all') {
           const taskSubject = (task.subject || '').toString().toLowerCase();
-          const activeSubject = this.activeSubject.toString().toLowerCase();
-
-          if (taskSubject !== activeSubject) {
-            return false; // Если предмет не совпадает, сразу отбрасываем
+          if (taskSubject !== this.currentSubject) {
+            return false;
           }
         }
 
-        if (this.selectedDifficulties && this.selectedDifficulties.includes('any') || 
-            this.selectedDifficulties.includes('Любая') ||
-            !this.selectedDifficulties || this.selectedDifficulties.length === 0) {
+        if (this.selectedDifficulties.includes('any') || !this.selectedDifficulties.length) {
           return true;
         }
 
-        const taskDifficulty = (task.difficulty || task.complexity || task.difficulty_level || 'medium').toString().toLowerCase();
-
-        const hasDifficulty = this.selectedDifficulties.some(diff => 
+        const taskDifficulty = (task.difficulty || 'medium').toString().toLowerCase();
+        return this.selectedDifficulties.some(diff => 
           diff.toString().toLowerCase() === taskDifficulty
         );
-
-        return hasDifficulty;
       });
   
-      return this.sortTasks(filtered);
+      return this.applySorting(result);
     },
     
-    currentPageTasks() {
-      const tasksPerPage = 2;
-      const startIndex = (this.currentPage - 1) * tasksPerPage;
-      const endIndex = startIndex + tasksPerPage;
+    tasksOnPage() {
+      const perPage = 2;
+      const start = (this.currentPageNumber - 1) * perPage;
+      const end = start + perPage;
       
-      return this.filteredTasks.slice(startIndex, endIndex);
+      return this.filteredTasks.slice(start, end);
     },
     
-    totalPages() {
-      const tasksPerPage = 2;
-      return Math.ceil(this.filteredTasks.length / tasksPerPage) || 1;
+    totalPageCount() {
+      const perPage = 2;
+      return Math.ceil(this.filteredTasks.length / perPage) || 1;
     }
   },
   
   created() {
-    this.getTasks();
+    this.loadTasks();
   },
   
   methods: {
-    async getTasks() {
-      this.isLoading = true;
-      this.error = null;
+    returnHome() {
+      this.$router.push('/');
+    },
+    
+    async loadTasks() {
+      this.loading = true;
+      this.fetchError = null;
       
       try {
-        const response = await axios.get('http://localhost:8000/api/tasks/');
+        const result = await axios.get('http://localhost:8000/api/tasks/');
         
-        console.log('Полученные задания:', response.data);
-        
-        if (Array.isArray(response.data)) {
-          this.allTasks = response.data;
-        } else if (response.data.results) {
-          this.allTasks = response.data.results;
-        } else if (response.data.tasks) {
-          this.allTasks = response.data.tasks;
+        if (Array.isArray(result.data)) {
+          this.taskCollection = result.data;
+        } else if (result.data.results) {
+          this.taskCollection = result.data.results;
+        } else if (result.data.tasks) {
+          this.taskCollection = result.data.tasks;
         } else {
-          this.allTasks = [];
+          this.taskCollection = [];
         }
         
-      } catch (err) {
-        console.error('Ошибка при загрузке заданий:', err);
-        this.error = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
-        this.allTasks = this.getMockTasks();
+      } catch (error) {
+        console.error('Ошибка загрузки заданий:', error);
+        this.fetchError = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
       } finally {
-        this.isLoading = false;
+        this.loading = false;
       }
     },
 
-    
-
-    getDifficultyText(difficulty) {
-      const difficultyMap = {
+    formatDifficulty(level) {
+      const names = {
         'easy': 'Лёгкая',
         'medium': 'Средняя',
         'hard': 'Сложная'
       };
-      return difficultyMap[difficulty] || difficulty;
-    },
-  
-    getDifficultyClass(difficulty) {
-      const normalized = difficulty.toLowerCase();
-      if (['easy', 'medium', 'hard'].includes(normalized)) {
-        return normalized;
-      }
-      return 'medium';
+      return names[level] || level;
     },
     
-    getSubjectName(subjectId) {
-      const subject = this.subjects.find(s => s.id === subjectId);
+    getCurrentSubjectName() {
+      const subject = this.subjectList.find(s => s.id === this.currentSubject);
       return subject ? subject.name : 'МАТЕМАТИКА';
     },
     
-    searchTask() {
+    findTask() {
       alert('Поиск задания');
     },
     
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
+    goToPrevPage() {
+      if (this.currentPageNumber > 1) {
+        this.currentPageNumber--;
       }
     },
     
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
+    goToNextPage() {
+      if (this.currentPageNumber < this.totalPageCount) {
+        this.currentPageNumber++;
       }
     },
     
-    goToPage(page) {
-      this.currentPage = page;
+    selectPage(page) {
+      this.currentPageNumber = page;
     },
     
-    toggleAnswer(taskId) {
-      this.$set(this.showAnswer, taskId, !this.showAnswer[taskId]);
+    toggleAnswerVisibility(taskId) {
+      this.$set(this.answerVisible, taskId, !this.answerVisible[taskId]);
     },
     
-    sortTasks(tasks) {
+    applySorting(tasks) {
       if (!tasks || !Array.isArray(tasks)) {
         return [];
       }
       
       const tasksCopy = [...tasks];
       
-      if (this.sortBy === 'number') {
+      if (this.sortMethod === 'number') {
         return tasksCopy.sort((a, b) => {
-          const getNumber = (str) => {
+          const getNum = (str) => {
             const match = str ? str.toString().match(/\d+/g) : null;
             return match ? parseInt(match[0]) : 0;
           };
           
-          const numA = getNumber(a.number || a.task_number || '0');
-          const numB = getNumber(b.number || b.task_number || '0');
-          return numA - numB;
+          return getNum(a.number) - getNum(b.number);
         });
-      } else if (this.sortBy === 'difficulty') {
-        const difficultyOrder = { easy: 1, medium: 2, hard: 3 };
+      } 
+      
+      if (this.sortMethod === 'difficulty') {
+        const order = { easy: 1, medium: 2, hard: 3 };
         return tasksCopy.sort((a, b) => {
-          const diffA = difficultyOrder[a.difficulty] || 2;
-          const diffB = difficultyOrder[b.difficulty] || 2;
+          const diffA = order[a.difficulty] || 2;
+          const diffB = order[b.difficulty] || 2;
           
           if (diffA !== diffB) {
             return diffA - diffB;
           }
-          const getNumber = (str) => {
+          
+          const getNum = (str) => {
             const match = str ? str.toString().match(/\d+/g) : null;
             return match ? parseInt(match[0]) : 0;
           };
-          const numA = getNumber(a.number || a.task_number || '0');
-          const numB = getNumber(b.number || b.task_number || '0');
-          return numA - numB;
+          
+          return getNum(a.number) - getNum(b.number);
         });
-      } else if (this.sortBy === 'type') {
+      } 
+      
+      if (this.sortMethod === 'type') {
         return tasksCopy.sort((a, b) => {
-          const typeA = a.type || a.category || '';
-          const typeB = b.type || b.category || '';
-          const typeCompare = typeA.localeCompare(typeB);
-          if (typeCompare !== 0) {
-            return typeCompare;
+          const typeA = a.type || '';
+          const typeB = b.type || '';
+          const compare = typeA.localeCompare(typeB);
+          
+          if (compare !== 0) {
+            return compare;
           }
-          const getNumber = (str) => {
+          
+          const getNum = (str) => {
             const match = str ? str.toString().match(/\d+/g) : null;
             return match ? parseInt(match[0]) : 0;
           };
-          const numA = getNumber(a.number || a.task_number || '0');
-          const numB = getNumber(b.number || b.task_number || '0');
-          return numA - numB;
+          
+          return getNum(a.number) - getNum(b.number);
         });
       }
+      
       return tasksCopy;
     }
   }
@@ -416,163 +382,124 @@ export default {
 </script>
 
 <style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.study-page {
+  min-height: 100vh;
+  background: #FAF6EF;
+  font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
-.page {
+.page-wrapper {
   display: flex;
   min-height: 100vh;
-  background: rgb(250, 246, 239);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
 }
 
-/* Скрываем скроллбары */
-.page::-webkit-scrollbar,
-.sidebar::-webkit-scrollbar,
-.content::-webkit-scrollbar,
-.subjects::-webkit-scrollbar {
-  display: none;
-}
-
-.page,
-.sidebar,
-.content,
-.subjects {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.sidebar {
+.navigation-panel {
   width: 300px;
-  background: rgb(250, 246, 239);
+  background: #FAF6EF;
   padding: 0;
-  overflow-y: auto;
   height: 100vh;
   position: sticky;
   top: 0;
+  /* Оставляем скролл, но делаем его невидимым */
+  overflow-y: auto;
+  /* Убираем стандартный скроллбар во всех браузерах */
+  scrollbar-width: none; /* Для Firefox */
 }
 
-.sidebar-title {
-  background: rgb(250, 246, 239);
-  color: #000000;
-  padding: 20px;
+/* Скрываем скроллбар в Webkit-браузерах (Chrome, Safari, Edge) */
+.navigation-panel::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.panel-header {
+  padding: 24px 20px;
+  border-bottom: 2px solid #E0E0E0;
+}
+
+.panel-header h2 {
+  color: #000;
   font-size: 15px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
-.difficulty-filter {
+.filter-block,
+.sort-block {
   padding: 20px;
-  background: #ffffff;
+  background: #FFF;
   margin: 15px;
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-.filter-title {
+.filter-block h3,
+.sort-block h3 {
   font-size: 13px;
   font-weight: 800;
-  color: #1565c0;
+  color: #1565C0;
   margin-bottom: 15px;
-  text-transform: uppercase;
   letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
-.filter-options {
+.filter-list,
+.sort-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.filter-option {
+.filter-item,
+.sort-item {
   display: flex;
   align-items: center;
   gap: 10px;
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 8px;
-  transition: all 0.3s;
+  transition: background 0.2s;
 }
 
-.filter-option:hover {
-  background: #f5f7fa;
+.filter-item:hover,
+.sort-item:hover {
+  background: #F5F7FA;
 }
 
-.filter-option input[type="checkbox"] {
+.filter-item input[type="checkbox"],
+.sort-item input[type="radio"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
-.filter-label {
+.filter-item span,
+.sort-item span {
   font-size: 14px;
   font-weight: 500;
   color: #263238;
   cursor: pointer;
 }
 
-.sidebar-sorting {
-  padding: 20px;
-  background: #ffffff;
-  margin: 15px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.sidebar-sorting .sort-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: #1565c0;
-  margin-bottom: 15px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.sidebar-sorting .sort-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sidebar-sorting .sort-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: all 0.3s;
-}
-
-.sidebar-sorting .sort-option:hover {
-  background: #f5f7fa;
-}
-
-.sidebar-sorting .sort-option input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.sidebar-sorting .sort-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #263238;
-  cursor: pointer;
-}
-
-.subjects {
-  background-color: rgb(250, 246, 239);
+.subject-list {
   padding: 15px;
   max-height: calc(100vh - 380px);
+  /* Убираем скроллбар в списке предметов */
   overflow-y: auto;
+  scrollbar-width: none; /* Для Firefox */
 }
 
-.subject {
+/* Скрываем скроллбар в списке предметов */
+.subject-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.subject-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -583,33 +510,32 @@ export default {
   color: #263238;
   font-size: 15px;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.2s;
   border: 2px solid transparent;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  background: #FFF;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-.subject:hover {
-  border-color: #42a5f5;
+.subject-item:hover {
+  border-color: #42A5F5;
   transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
-.subject.active {
-  color: #000000;
-  border-color: #1565c0;
+.subject-item.active {
+  color: #000;
+  border-color: #1565C0;
   transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+  box-shadow: 0 4px 12px rgba(30,136,229,0.3);
 }
 
-.content {
-  background-color: rgb(250, 246, 239);
+.main-content {
   flex: 1;
   padding: 35px 45px;
   overflow-y: auto;
 }
 
-.header {
+.content-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -618,24 +544,22 @@ export default {
   border-radius: 15px;
 }
 
-.title-section h1 {
-  color: #000000;
+.subject-info h1 {
+  color: #000;
   font-size: 32px;
   font-weight: 800;
   margin-bottom: 12px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.search-section {
+.search-tool {
   width: 350px;
 }
 
 .search-label {
   font-size: 13px;
   font-weight: 800;
-  color: #1565c0;
+  color: #1565C0;
   margin-bottom: 10px;
-  text-transform: uppercase;
   letter-spacing: 1.5px;
   display: flex;
   align-items: center;
@@ -647,67 +571,62 @@ export default {
   font-size: 16px;
 }
 
-.search-input {
+.search-box {
   display: flex;
   gap: 12px;
 }
 
-.search-input input {
+.search-box input {
   flex: 1;
   padding: 16px 20px;
-  border: 3px solid #b0bec5;
+  border: 3px solid #B0BEC5;
   border-radius: 10px;
   font-size: 16px;
   color: #263238;
-  background: #ffffff;
-  transition: all 0.3s;
+  background: #FFF;
+  transition: all 0.2s;
 }
 
-.search-input input:focus {
+.search-box input:focus {
   outline: none;
-  border-color: #1e88e5;
-  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.2);
+  border-color: #1E88E5;
+  box-shadow: 0 0 0 3px rgba(30,136,229,0.2);
 }
 
-.search-input button {
+.search-box button {
   padding: 16px 28px;
-  background: linear-gradient(135deg, #1e88e5, #1565c0);
-  color: #ffffff;
+  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  color: #FFF;
   border: none;
   border-radius: 10px;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
-.search-input button:hover {
+.search-box button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.4);
+  box-shadow: 0 4px 12px rgba(30,136,229,0.4);
 }
 
-.search-input button:active {
-  transform: translateY(0);
-}
-
-/* Список заданий */
-.tasks-list {
+.task-list {
   display: flex;
   flex-direction: column;
   gap: 60px;
 }
 
-.task-card {
-  background: #ffffff;
+.task-block {
+  background: #FFF;
   border-radius: 15px;
   padding: 35px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
   position: relative;
   overflow: hidden;
   margin-bottom: 10px;
 }
 
-.task-card::before {
+.task-block::before {
   content: '';
   position: absolute;
   top: 0;
@@ -717,13 +636,13 @@ export default {
   background: white;
 }
 
-.task-header {
+.task-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 25px;
-  border-bottom: 2px solid #cfd8dc;
+  border-bottom: 2px solid #CFD8DC;
 }
 
 .task-title {
@@ -732,98 +651,237 @@ export default {
   gap: 20px;
 }
 
-.task-number {
-  color: #000000;
+.task-id {
+  color: #000;
   font-size: 20px;
   font-weight: 900;
   letter-spacing: 0.5px;
   padding: 5px 0;
-  border-bottom: 3px solid #000000;
+  border-bottom: 3px solid #000;
 }
 
-.difficulty {
+.difficulty-mark {
   padding: 10px 22px;
   border-radius: 25px;
   font-size: 14px;
   font-weight: 900;
-  text-transform: uppercase;
   letter-spacing: 1px;
   border: 3px solid;
+  text-transform: uppercase;
 }
 
-.difficulty.easy {
-  background: #e8f5e9;
-  color: #43a047;
-  border-color: #43a047;
+.difficulty-mark.easy {
+  background: #E8F5E9;
+  color: #43A047;
+  border-color: #43A047;
 }
 
-.difficulty.medium {
-  background: #fff3e0;
-  color: #fb8c00;
-  border-color: #fb8c00;
+.difficulty-mark.medium {
+  background: #FFF3E0;
+  color: #FB8C00;
+  border-color: #FB8C00;
 }
 
-.difficulty.hard {
-  background: #ffebee;
-  color: #e53935;
-  border-color: #e53935;
+.difficulty-mark.hard {
+  background: #FFEBEE;
+  color: #E53935;
+  border-color: #E53935;
 }
 
-.task-type {
-  color: #8e24aa;
+.task-category {
+  color: #8E24AA;
   font-size: 16px;
   font-weight: 800;
   padding: 10px 22px;
-  background: #f3e5f5;
+  background: #F3E5F5;
   border-radius: 25px;
-  border: 3px solid #8e24aa;
+  border: 3px solid #8E24AA;
 }
 
-.task-text {
+.task-description {
   font-size: 17px;
   line-height: 1.8;
   color: #263238;
   margin-bottom: 30px;
   padding: 20px;
-  background: #f5f7fa;
+  background: #F5F7FA;
   border-radius: 12px;
-  border: 2px solid #cfd8dc;
+  border: 2px solid #CFD8DC;
   font-weight: 500;
 }
 
-.task-answer {
+.answer-section {
   border-radius: 12px;
   padding: 20px 0;
 }
 
-.show-answer-btn {
+.toggle-answer {
   display: inline-block;
   padding: 12px 24px;
-  color: #000000;
+  color: #000;
   background: transparent;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   border-radius: 8px;
-  text-decoration: none;
-  border: 2px solid #000000;
+  border: 2px solid #000;
 }
 
-.show-answer-btn:hover {
-  background: #1e88e5;
-  color: #ffffff;
+.toggle-answer:hover {
+  background: #1E88E5;
+  color: #FFF;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.2);
+  box-shadow: 0 4px 12px rgba(30,136,229,0.2);
 }
 
-.answer-content {
+.answer-block {
   margin-top: 20px;
   padding: 20px;
-  background: #f5f7fa;
+  background: #F5F7FA;
   border-radius: 10px;
-  border: 2px solid #cfd8dc;
+  border: 2px solid #CFD8DC;
   animation: fadeIn 0.3s ease;
+}
+
+.answer-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1565C0;
+  margin-bottom: 10px;
+}
+
+.answer-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #263238;
+  line-height: 1.6;
+}
+
+.empty-list {
+  text-align: center;
+  padding: 60px;
+  background: #FFF;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.empty-list p {
+  font-size: 18px;
+  color: #546E7A;
+  font-weight: 500;
+}
+
+.page-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 50px;
+  padding: 30px;
+  background: #FFF;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.nav-btn {
+  padding: 14px 30px;
+  border-radius: 10px;
+  background: #FFF;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid #1E88E5;
+  color: #1E88E5;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #1E88E5;
+  color: #FFF;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(30,136,229,0.3);
+}
+
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  border-color: #B0BEC5;
+  color: #546E7A;
+}
+
+.page-indicators {
+  display: flex;
+  gap: 10px;
+}
+
+.page-indicator {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 17px;
+  background: #FFF;
+  border: 2px solid #1E88E5;
+  color: #1E88E5;
+  transition: all 0.2s;
+}
+
+.page-indicator:hover {
+  background: #42A5F5;
+  color: #FFF;
+  transform: translateY(-2px);
+}
+
+.page-indicator.active {
+  background: #1E88E5;
+  color: #FFF;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(30,136,229,0.3);
+}
+
+.main-page-btn {
+  font-family: "Alexandria", sans-serif;
+  background: #224762;
+  color: white;
+  border: none;
+  padding: 14px 35px 14px 25px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 6px 20px rgba(34,71,98,0.25);
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  position: absolute;
+  top: 20px;
+  right: 45px;
+  min-width: 180px;
+}
+
+.home-symbol {
+  width: 22px;
+  height: 22px;
+  fill: white;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.main-page-btn:hover {
+  background: #1B3A50;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(34,71,98,0.35);
+}
+
+.main-page-btn:active {
+  transform: translateY(0);
 }
 
 @keyframes fadeIn {
@@ -837,156 +895,124 @@ export default {
   }
 }
 
-.answer-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1565c0;
-  margin-bottom: 10px;
-}
-
-.answer-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #263238;
-  line-height: 1.6;
-}
-
-.no-tasks-message {
-  text-align: center;
-  padding: 60px;
-  background: #ffffff;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.no-tasks-message p {
-  font-size: 18px;
-  color: #546e7a;
-  font-weight: 500;
-}
-
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 50px;
-  padding: 30px;
-  background: #ffffff;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.page-btn {
-  padding: 14px 30px;
-  border-radius: 10px;
-  background: #ffffff;
-  font-size: 16px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 2px solid #1e88e5;
-  color: #1e88e5;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: #1e88e5;
-  color: #ffffff;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(30, 136, 229, 0.3);
-}
-
-.page-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  border-color: #b0bec5;
-  color: #546e7a;
-}
-
-.page-numbers {
-  display: flex;
-  gap: 10px;
-}
-
-.page-number {
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 800;
-  font-size: 17px;
-  background: #ffffff;
-  border: 2px solid #1e88e5;
-  color: #1e88e5;
-  transition: all 0.3s;
-}
-
-.page-number:hover {
-  background: #42a5f5;
-  color: #ffffff;
-  transform: translateY(-2px);
-}
-
-.page-number.active {
-  background: #1e88e5;
-  color: #ffffff;
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(30, 136, 229, 0.3);
-}
-
 @media (max-width: 1200px) {
-  .page {
+  .page-wrapper {
     flex-direction: column;
   }
   
-  .sidebar {
+  .navigation-panel {
     width: 100%;
     height: auto;
     position: static;
+    /* На мобильных тоже скрываем скроллбар */
+    scrollbar-width: none;
   }
   
-  .subjects {
+  .navigation-panel::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  
+  .main-content {
+    padding: 25px;
+  }
+  
+  .subject-list {
     max-height: none;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 10px;
+    /* Убираем overflow-y на мобильных, так как используется grid */
+    overflow-y: visible;
   }
   
-  .content {
-    padding: 25px;
-  }
-  
-  .difficulty-filter,
-  .sidebar-sorting {
+  .filter-block,
+  .sort-block {
     margin: 10px;
+  }
+  
+  .main-page-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    min-width: 160px;
+    padding: 12px 25px 12px 20px;
   }
 }
 
 @media (max-width: 768px) {
-  .header {
+  .content-header {
     flex-direction: column;
     gap: 25px;
   }
   
-  .search-section {
+  .search-tool {
     width: 100%;
   }
   
-  .task-header {
+  .task-head {
     flex-direction: column;
     align-items: flex-start;
     gap: 20px;
   }
   
-  .pagination {
+  .page-controls {
     flex-direction: column;
     gap: 20px;
   }
   
-  .page-numbers {
+  .page-indicators {
     order: -1;
+  }
+  
+  .main-page-btn {
+    top: 15px;
+    right: 15px;
+    padding: 12px 20px 12px 16px;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    gap: 8px;
+    border-radius: 40px;
+    box-shadow: 0 4px 15px rgba(34,71,98,0.25);
+    min-width: auto;
+  }
+  
+  .home-symbol {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-page-btn {
+    top: 10px;
+    right: 10px;
+    padding: 10px 16px 10px 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
+  
+  .home-symbol {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .main-page-btn span {
+    display: none;
+  }
+  
+  .main-page-btn {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  
+  .home-symbol {
+    width: 22px;
+    height: 22px;
   }
 }
 </style>
