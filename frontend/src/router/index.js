@@ -23,6 +23,14 @@ const router = createRouter({
       path: '/tasks',
       name: 'tasks',
       component: () => import('../views/StudyViewNotAnswer.vue'),
+      meta: {
+        requiresAuth: false // Разрешаем доступ всем
+      }
+    },
+    {
+      path: '/test',
+      name: 'test',
+      component: () => import('../views/StudyView.vue'),
     },
     {
       path: '/PvP',
