@@ -3,6 +3,7 @@
     import Footer from '@/components/Footer.vue';
     import HeaderEnter from '@/components/HeaderEnter.vue';
     import axios from 'axios';
+    import { useRouter } from 'vue-router';
 
     export default {
         components: { Header, Footer, HeaderEnter },
@@ -30,7 +31,10 @@
                 } finally {
                     this.isLoading = false;
                 }
-            }
+            },
+            GoToStudy() {
+                this.$router.push('/tasks');
+            },
         }
     }
 </script>
@@ -55,11 +59,9 @@
         <h5>мы подготавливаем школьников 5-11 класса, для участия в олимпиадах</h5>
 
         <div class="button-container">
-            <a href="ТУТ БУДЕТ ССЫЛКА" target="_blank">
-                <button class="centered-btn">
+                <button class="centered-btn" @click="GoToStudy">
                     Начать решать
                 </button>
-            </a>
         </div>
        <div class="content">
             <div class="highlight">
@@ -68,7 +70,6 @@
             </div>                    
         </div>
 
-        <!-- Карточки "Почему именно мы?" -->
         <div class="cards-container">
             <h2 class="cards-title">Почему именно мы?</h2>
             <div class="cards-grid">
@@ -106,7 +107,6 @@
         <section class="courses-section">
             <h2 class="section-title">Олимпиадные предметы</h2>
             <div class="courses-grid">
-                <!-- Математические предметы -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-calculator"></i></div>
                     <div class="course-name"><a class="href_on_card">Математика</a></div>
@@ -120,7 +120,6 @@
                     <div class="course-name"><a class="href_on_card">Дискретная математика</a></div>
                 </div>
                 
-                <!-- Естественные науки -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-atom"></i></div>
                     <div class="course-name"><a class="href_on_card">Физика</a></div>
@@ -146,7 +145,6 @@
                     <div class="course-name"><a class="href_on_card">Астрономия</a></div>
                 </div>
                 
-                <!-- Филология и языки -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-language"></i></div>
                     <div class="course-name"><a class="href_on_card">Русский язык</a></div>
@@ -180,7 +178,6 @@
                     <div class="course-name"><a class="href_on_card">Латинский язык</a></div>
                 </div>
                 
-                <!-- Гуманитарные науки -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-landmark"></i></div>
                     <div class="course-name"><a class="href_on_card">История</a></div>
@@ -210,7 +207,6 @@
                     <div class="course-name"><a class="href_on_card">Технология</a></div>
                 </div>
                 
-                <!-- Информатика и технологии -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-laptop-code"></i></div>
                     <div class="course-name"><a class="href_on_card">Информатика</a></div>
@@ -224,7 +220,6 @@
                     <div class="course-name"><a class="href_on_card">Искусственный интеллект</a></div>
                 </div>
                 
-                <!-- Другие -->
                 <div class="course-card">
                     <div class="course-icon"><i class="fas fa-heartbeat"></i></div>
                     <div class="course-name"><a class="href_on_card">Физкультура</a></div>
@@ -329,7 +324,6 @@ h5 {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-/* Стили для карточек "Почему именно мы?" */
 .cards-container {
     max-width: 1200px;
     margin: 60px auto;
