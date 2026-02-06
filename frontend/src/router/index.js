@@ -25,6 +25,21 @@ const router = createRouter({
       component: () => import('../views/StudyViewNotAnswer.vue'),
     },
     {
+      path: '/PvP',
+      name: 'pvp',
+      component: () => import('../PvP/main.vue'),
+    },
+    {
+      path: '/PvP/create',
+      name: 'create',
+      component: () => import('../PvP/createMatch.vue'),
+    },
+    {
+      path: '/PvP/create/wait',
+      name: 'wait',
+      component: () => import('../PvP/pvpWait.vue'),
+    },
+    {
       path: '/register',
       name: 'register',
       // route level code-splitting
