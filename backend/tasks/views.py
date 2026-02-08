@@ -9,6 +9,7 @@ from rest_framework import filters
 
 from .models import Task
 from .serializers import TaskSerializer
+from analytics.models import TaskAttempt
 
 class TaskPagination(PageNumberPagination):
     page_size = 10
@@ -24,6 +25,7 @@ class TaskViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['text']
     ordering_fields = ['id', 'subject', 'difficulty']
     ordering = ['id']
+
 
 class SubmitTaskView(APIView):
     permission_classes = [IsAuthenticated]
@@ -43,14 +45,23 @@ class SubmitTaskView(APIView):
 
         is_correct = (user_answer == task.correct_answer.strip())
 
+
         profile.solved_tasks += 1
         if is_correct:
             profile.correct_answers += 1
         profile.save()
 
+        TaskAttempt.objects.create(
+            user=request.user,
+            task=task,
+            is_correct=is_correct,
+            subject=task.subject,
+            difficulty=task.difficulty
+        )
+
         message = "Верно!" if is_correct else "Неверно."
+
         return Response({
             "correct": is_correct,
-            "message": message,
-            "correct_answer": task.correct_answer  # временная заглушка,потом проверять конкретно по режиму
+            "message": message
         })

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'tasks.apps.TasksConfig',
     'channels',
     'pvp.apps.PvpConfig',
+    'analytics.apps.AnalyticsConfig',
 ]
 
 REST_FRAMEWORK = {

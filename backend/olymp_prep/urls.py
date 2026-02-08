@@ -24,4 +24,5 @@ urlpatterns = [
     path('api/auth/', include('users.urls')),
     path('api/', include('tasks.urls')),
     path('api/pvp/', include('pvp.urls')),
+    path('api/analytics/', include('analytics.urls')),
 ]
