@@ -128,7 +128,6 @@ export default {
         { id: 'easy', name: 'Лёгкая', description: 'Для новичков' },
         { id: 'medium', name: 'Средняя', description: 'Базовый уровень' },
         { id: 'hard', name: 'Сложная', description: 'Олимпиадный уровень' },
-        { id: 'expert', name: 'Эксперт', description: 'Для профи' }
       ]
     }
   },
