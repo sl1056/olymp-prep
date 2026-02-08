@@ -47,6 +47,11 @@ const router = createRouter({
       name: 'wait',
       component: () => import('../PvP/pvpWait.vue'),
     },
+     {
+      path: '/PvP/Answer',
+      name: 'answer',
+      component: () => import('../PvP/pvpAnswer.vue'),
+    },
     {
       path: '/register',
       name: 'register',
