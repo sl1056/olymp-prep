@@ -63,11 +63,10 @@
                 :key="n"
                 class="question-number"
                 :class="{
-                  'active': n === currentQuestion,
+                  'current': n === currentQuestion,
                   'answered': answers[n-1]?.answered,
                   'correct': answers[n-1]?.correct
                 }"
-                @click="switchQuestion(n)"
               >
                 {{ n }}
               </div>
@@ -124,25 +123,6 @@
                  class="error-message">
               Правильный ответ: <strong>{{ getCorrectAnswer(currentQuestion) }}</strong>
             </div>
-          </div>
-        </div>
-
-        <div class="navigation-section">
-          <div class="navigation-buttons">
-            <button 
-              class="nav-button prev"
-              @click="prevQuestion"
-              :disabled="currentQuestion === 1"
-            >
-              ← Предыдущий
-            </button>
-            <button 
-              class="nav-button next"
-              @click="nextQuestion"
-              :disabled="currentQuestion === 10"
-            >
-              Следующий →
-            </button>
           </div>
         </div>
 
@@ -240,22 +220,6 @@ export default {
       });
     },
     
-    switchQuestion(questionNumber) {
-      this.currentQuestion = questionNumber;
-    },
-    
-    prevQuestion() {
-      if (this.currentQuestion > 1) {
-        this.currentQuestion--;
-      }
-    },
-    
-    nextQuestion() {
-      if (this.currentQuestion < 10) {
-        this.currentQuestion++;
-      }
-    },
-    
     checkAnswer() {
       const questionIndex = this.currentQuestion - 1;
       
@@ -296,6 +260,11 @@ export default {
           }
           this.opponentAnswered++;
         }, 800 + Math.random() * 1200);
+      }
+      
+      // Мгновенный переход к следующему вопросу
+      if (this.currentQuestion < 10) {
+        this.currentQuestion++;
       }
       
       this.$emit('answer-checked', {
@@ -534,25 +503,16 @@ export default {
   font-size: 14px;
   font-weight: 600;
   color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
+  user-select: none;
+  cursor: default;
 }
 
-.question-number:hover:not(.answered) {
-  background: #e3f2fd;
-  border-color: #1565c0;
-  color: #1565c0;
-}
-
-.question-number.active {
+.question-number.current {
   background: #1565c0;
   border-color: #1565c0;
   color: white;
   transform: scale(1.1);
-}
-
-.question-number.answered {
-  cursor: default;
+  box-shadow: 0 2px 6px rgba(21, 101, 192, 0.3);
 }
 
 .question-number.correct {
@@ -739,40 +699,6 @@ export default {
   border-left: 4px solid #e53935;
 }
 
-.navigation-section {
-  margin-bottom: 25px;
-}
-
-.navigation-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.nav-button {
-  flex: 1;
-  padding: 14px;
-  border: 2px solid #1565c0;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: white;
-  color: #1565c0;
-}
-
-.nav-button:hover:not(:disabled) {
-  background: #1565c0;
-  color: white;
-}
-
-.nav-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  border-color: #bdbdbd;
-  color: #9e9e9e;
-}
-
 .finish-section {
   margin-top: auto;
 }
@@ -850,10 +776,6 @@ export default {
   
   .check-button {
     width: 100%;
-  }
-  
-  .navigation-buttons {
-    flex-direction: column;
   }
   
   .questions-grid {
