@@ -9,7 +9,6 @@
       <div class="score-container">
         <div class="score-box you">
           <div class="score-header">
-            <div class="player-icon">👤</div>
             <h3>Вы</h3>
           </div>
           <div class="score-main">
@@ -36,7 +35,6 @@
 
         <div class="score-box opponent">
           <div class="score-header">
-            <div class="player-icon">⚡</div>
             <h3>Соперник</h3>
           </div>
           <div class="score-main">
@@ -57,7 +55,6 @@
       </div>
 
       <div class="result-banner" :class="resultClass">
-        <div class="result-icon">{{ resultIcon }}</div>
         <div class="result-text">
           <h2>{{ resultText }}</h2>
           <p>{{ resultSubtitle }}</p>
@@ -124,179 +121,94 @@ export default {
   name: 'GameResultsPage',
   
   data() {
-    const gameResults = {
-      playerScore: 7,
-      rivalScore: 6,
-      playerRightAnswers: 7,
-      rivalRightAnswers: 6,
-      questionsCount: 10
-    };
-    
-    const quizData = [
-      { id: 1, questionText: 'Сколько будет 2 + 2?', rightAnswer: '4' },
-      { id: 2, questionText: 'Столица России?', rightAnswer: 'Москва' },
-      { id: 3, questionText: 'Сколько планет в Солнечной системе?', rightAnswer: '8' },
-      { id: 4, questionText: 'Кто написал "Евгений Онегин"?', rightAnswer: 'Пушкин' },
-      { id: 5, questionText: 'Год основания Москвы?', rightAnswer: '1147' },
-      { id: 6, questionText: 'Сколько дней в високосном году?', rightAnswer: '366' },
-      { id: 7, questionText: 'Самый большой океан?', rightAnswer: 'Тихий' },
-      { id: 8, questionText: 'Химическая формула воды?', rightAnswer: 'H2O' },
-      { id: 9, questionText: 'Первый космонавт?', rightAnswer: 'Гагарин' },
-      { id: 10, questionText: 'Самая длинная река в мире?', rightAnswer: 'Нил' }
-    ];
-    
-    const playerAnswers = ['4', 'Москва', '8', 'Пушкин', '1147', '366', 'Тихий', 'H2O', 'Гагарин', 'Амазонка'];
-    const rivalAnswers = ['4', 'Москва', '9', 'Пушкин', '1147', '365', 'Атлантический', 'H2O', 'Гагарин', 'Нил'];
-    
     return {
-      gameResults,
-      quizData,
-      playerAnswers,
-      rivalAnswers,
-      isLoading: false
+      results: {
+        yourScore: 7,
+        opponentScore: 5,
+        yourCorrect: 7,
+        opponentCorrect: 5,
+        totalQuestions: 10
+      },
+      questions: [
+        { text: 'Сколько будет 2 + 2?', correctAnswer: '4' },
+        { text: 'Столица России?', correctAnswer: 'Москва' },
+        { text: 'Сколько планет в Солнечной системе?', correctAnswer: '8' },
+        { text: 'Кто написал "Евгений Онегин"?', correctAnswer: 'Пушкин' },
+        { text: 'Год основания Москвы?', correctAnswer: '1147' },
+        { text: 'Сколько дней в високосном году?', correctAnswer: '366' },
+        { text: 'Самый большой океан?', correctAnswer: 'Тихий' },
+        { text: 'Химическая формула воды?', correctAnswer: 'H2O' },
+        { text: 'Первый космонавт?', correctAnswer: 'Гагарин' },
+        { text: 'Самая длинная река в мире?', correctAnswer: 'Нил' }
+      ],
+      yourAnswers: ['4', 'Москва', '8', 'Толстой', '1147', '366', 'Тихий', 'H2O', 'Гагарин', 'Амазонка'],
+      opponentAnswers: ['5', 'Москва', '9', 'Пушкин', '1247', '366', 'Атлантический', 'H2O', 'Леонов', 'Нил']
     };
   },
   
   computed: {
-    results() {
-      return {
-        yourScore: this.gameResults.playerScore,
-        opponentScore: this.gameResults.rivalScore,
-        yourCorrect: this.gameResults.playerRightAnswers,
-        opponentCorrect: this.gameResults.rivalRightAnswers,
-        totalQuestions: this.gameResults.questionsCount
-      };
-    },
-    
-    questions() {
-      return this.quizData.map(q => ({
-        id: q.id,
-        text: q.questionText,
-        correctAnswer: q.rightAnswer
-      }));
-    },
-    
     yourPercentage() {
-      const correct = this.gameResults.playerRightAnswers;
-      const total = this.gameResults.questionsCount;
-      return total > 0 ? Math.floor((correct / total) * 100) : 0;
+      return Math.round((this.results.yourCorrect / this.results.totalQuestions) * 100);
     },
     
     opponentPercentage() {
-      const correct = this.gameResults.rivalRightAnswers;
-      const total = this.gameResults.questionsCount;
-      return total > 0 ? Math.floor((correct / total) * 100) : 0;
+      return Math.round((this.results.opponentCorrect / this.results.totalQuestions) * 100);
     },
     
     matchResult() {
-      const player = this.gameResults.playerScore;
-      const rival = this.gameResults.rivalScore;
-      
-      if (player > rival) return 'win';
-      if (player < rival) return 'lose';
+      if (this.results.yourScore > this.results.opponentScore) return 'win';
+      if (this.results.yourScore < this.results.opponentScore) return 'lose';
       return 'draw';
+    },
+    
+    resultText() {
+      switch (this.matchResult) {
+        case 'win': return 'Вы победили!';
+        case 'lose': return 'Соперник победил';
+        default: return 'Ничья';
+      }
+    },
+    
+    resultSubtitle() {
+      switch (this.matchResult) {
+        case 'win': return 'Отличный результат!';
+        case 'lose': return 'Попробуйте еще раз';
+        default: return 'Равная игра';
+      }
     },
     
     resultClass() {
       return this.matchResult;
-    },
-    
-    resultText() {
-      if (this.matchResult === 'win') return 'Вы победили!';
-      if (this.matchResult === 'lose') return 'Соперник победил';
-      return 'Ничья';
-    },
-    
-    resultSubtitle() {
-      if (this.matchResult === 'win') return 'Отличный результат!';
-      if (this.matchResult === 'lose') return 'Попробуйте еще раз';
-      return 'Равная игра';
-    },
-    
-    resultIcon() {
-      if (this.matchResult === 'win') return '🏆';
-      if (this.matchResult === 'lose') return '🎯';
-      return '🤝';
     }
   },
   
   methods: {
     getUserAnswer(index) {
-      if (index < 0 || index >= this.playerAnswers.length) return '—';
-      const answer = this.playerAnswers[index];
-      return answer && answer.trim() !== '' ? answer : '—';
+      return this.yourAnswers[index] || '—';
     },
     
     getOpponentAnswer(index) {
-      if (index < 0 || index >= this.rivalAnswers.length) return '—';
-      const answer = this.rivalAnswers[index];
-      return answer && answer.trim() !== '' ? answer : '—';
-    },
-    
-    checkAnswerCorrectness(userAnswer, correctAnswer) {
-      if (!userAnswer || userAnswer === '—') return false;
-      return userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+      return this.opponentAnswers[index] || '—';
     },
     
     isUserAnswerCorrect(index) {
-      if (index < 0 || index >= this.quizData.length) return false;
-      const userAnswer = this.getUserAnswer(index);
-      const correctAnswer = this.quizData[index].rightAnswer;
-      return this.checkAnswerCorrectness(userAnswer, correctAnswer);
+      const userAnswer = this.yourAnswers[index];
+      const correctAnswer = this.questions[index].correctAnswer;
+      return userAnswer && userAnswer.toLowerCase() === correctAnswer.toLowerCase();
     },
     
     isOpponentAnswerCorrect(index) {
-      if (index < 0 || index >= this.quizData.length) return false;
-      const opponentAnswer = this.getOpponentAnswer(index);
-      const correctAnswer = this.quizData[index].rightAnswer;
-      return this.checkAnswerCorrectness(opponentAnswer, correctAnswer);
+      const opponentAnswer = this.opponentAnswers[index];
+      const correctAnswer = this.questions[index].correctAnswer;
+      return opponentAnswer && opponentAnswer.toLowerCase() === correctAnswer.toLowerCase();
     },
     
-    async retryMatch() {
-      this.isLoading = true;
-      try {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        this.$router.push('/PvP/');
-      } catch (error) {
-        console.error('Ошибка при переходе:', error);
-      } finally {
-        this.isLoading = false;
-      }
+    retryMatch() {
+      this.$router.push('/PvP/');
     },
     
     goHome() {
-      this.saveToHistory();
       this.$router.push('/');
-    },
-    
-    saveToHistory() {
-      const historyItem = {
-        date: new Date().toLocaleString(),
-        score: `${this.gameResults.playerScore}:${this.gameResults.rivalScore}`,
-        result: this.matchResult
-      };
-      
-      try {
-        console.log('Сохранено в историю:', historyItem);
-      } catch (e) {
-      }
-    }
-  },
-  
-  mounted() {
-    const params = this.$route.params;
-    if (params && params.results) {
-      try {
-        const parsed = JSON.parse(params.results);
-        Object.assign(this.gameResults, {
-          playerScore: parsed.yourScore || 0,
-          rivalScore: parsed.opponentScore || 0,
-          playerRightAnswers: parsed.yourCorrect || 0,
-          rivalRightAnswers: parsed.opponentCorrect || 0,
-          questionsCount: parsed.totalQuestions || 10
-        });
-      } catch (e) {
-      }
     }
   }
 }
@@ -370,10 +282,6 @@ export default {
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
-}
-
-.player-icon {
-  font-size: 24px;
 }
 
 .score-header h3 {
@@ -478,11 +386,6 @@ export default {
 .result-banner.draw {
   border-left-color: #ff9800;
   background: linear-gradient(to right, #fff3e0, white);
-}
-
-.result-icon {
-  font-size: 48px;
-  flex-shrink: 0;
 }
 
 .result-text h2 {
