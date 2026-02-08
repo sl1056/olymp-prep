@@ -239,45 +239,41 @@ export default {
     },
     
     // Запуск матча
-    async launchMatch() {
-      if (!this.canStart) return
-      
-      this.isStarting = true
+    async createMatch() {
+      if (!this.userData) {
+        alert('Пожалуйста, войдите в систему для создания матча');
+        return;
+      }
+
+      this.creatingMatch = true;
       
       try {
-        // Формируем данные для API
-        const matchConfig = {
-          subject: this.currentSubject,
-          level: this.currentDifficulty,
-          settings: { ...this.options },
-          user_id: this.getUserId(), // заглушка
-          session: Date.now()
-        }
-        
-        // Логируем для отладки
-        console.group('Match config:')
-        console.log('Subject:', this.subjects.find(s => s.id === this.currentSubject)?.name)
-        console.log('Difficulty:', this.difficultyLevels.find(d => d.id === this.currentDifficulty)?.name)
-        console.log('Options:', this.options)
-        console.groupEnd()
-        
-        // Имитация запроса к API
-        await this.fakeApiCall()
-        
-        // Редирект
-        this.$router.push({
-          path: '/PvP/create/wait',
-          query: {
-            s: this.currentSubject,
-            d: this.currentDifficulty,
-            t: this.options.timer ? 1 : 0
+        // 1. Создаем матч на сервере
+        const token = localStorage.getItem('authToken');
+        const response = await axios.post(
+          'http://localhost:8000/api/pvp/create/',
+          {},
+          {
+            headers: {
+              'Authorization': `Token ${token}`
+            }
           }
-        })
+        );
+
+        this.matchId = response.data.match_id;
+        this.matchCode = response.data.code;
         
-      } catch (err) {
-        console.error('Ошибка при создании матча:', err)
-        alert('Что-то пошло не так. Попробуйте ещё раз.')
-        this.isStarting = false
+        // 2. Подключаемся к WebSocket
+        this.connectWebSocket('host');
+        
+        // 3. Показываем окно ожидания
+        this.showWaitingModal = true;
+        
+      } catch (error) {
+        console.error('Ошибка при создании матча:', error);
+        alert('Не удалось создать матч. Попробуйте еще раз.');
+      } finally {
+        this.creatingMatch = false;
       }
     },
     

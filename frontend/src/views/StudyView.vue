@@ -323,6 +323,7 @@ export default {
       this.error = null;
       
       try {
+
         const response = await axios.get('http://localhost:8000/api/tasks/');
         
         console.log('Полученные задания:', response.data);
@@ -365,6 +366,7 @@ export default {
       }
       catch (err) {
         console.error('Ошибка при отправке ответа:', err);
+        this.$router.push('/auth')
       }
     },
     

@@ -40,7 +40,6 @@
           <button class="mobile-nav-btn" @click="goToTraining">Тренинг</button>
           <button class="mobile-nav-btn" :class="{ active: $route.path === '/' }" @click="goToHome">Главная</button>
           <button class="mobile-nav-btn" @click="goToPvP">PvP</button>
-          <button class="mobile-auth-btn" @click="goToProfile">{{ userData?.username || 'Профиль' }}</button>
         </div>
       </div>
     </div>
@@ -73,7 +72,7 @@ export default {
     
     goToTraining() {
       this.closeMobileMenu();
-      this.$router.push('/tasks');
+      this.$router.push('/test');
     },
     
     goToPvP() {

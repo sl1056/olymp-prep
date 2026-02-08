@@ -94,7 +94,7 @@ export default {
     
     goToTraining() {
       this.closeMobileMenu();
-      this.$router.push('/tasks');
+      this.$router.push('/test');
     },
     
     goToPvP() {
