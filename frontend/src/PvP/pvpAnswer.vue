@@ -144,149 +144,93 @@ export default {
     return {
       currentQuestion: 1,
       currentAnswer: '',
-      
-      answers: Array(10).fill(null).map(() => ({
-        answer: '',
-        answered: false,
-        correct: false
-      })),
-      
       yourScore: 0,
-      
       opponentScore: 0,
-      opponentCorrect: 0,
-      opponentAnswered: 0,
+      
+      answers: Array(10).fill().map(() => ({ answered: false, correct: false })),
       
       questions: [
-        { question: 'Сколько будет 2 + 2?', answer: '4' },
-        { question: 'Столица России?', answer: 'Москва' },
-        { question: 'Сколько планет в Солнечной системе?', answer: '8' },
-        { question: 'Кто написал "Евгений Онегин"?', answer: 'Пушкин' },
-        { question: 'Год основания Москвы?', answer: '1147' },
-        { question: 'Сколько дней в високосном году?', answer: '366' },
-        { question: 'Самый большой океан?', answer: 'Тихий' },
-        { question: 'Химическая формула воды?', answer: 'H2O' },
-        { question: 'Первый космонавт?', answer: 'Гагарин' },
-        { question: 'Самая длинная река в мире?', answer: 'Нил' }
+        'Сколько будет 2 + 2?',
+        'Столица России?',
+        'Сколько планет в Солнечной системе?',
+        'Кто написал "Евгений Онегин"?',
+        'Год основания Москвы?',
+        'Сколько дней в високосном году?',
+        'Самый большой океан?',
+        'Химическая формула воды?',
+        'Первый космонавт?',
+        'Самая длинная река в мире?'
+      ],
+      
+      correctAnswers: [
+        '4', 'Москва', '8', 'Пушкин', '1147', 
+        '366', 'Тихий', 'H2O', 'Гагарин', 'Амазонка'
       ]
-    };
+    }
   },
   
   computed: {
     answeredQuestions() {
-      return this.answers.filter(a => a.answered).length;
+      return this.answers.filter(a => a.answered).length
     },
     
     answeredCorrectly() {
-      return this.answers.filter(a => a.correct).length;
+      return this.answers.filter(a => a.correct).length
+    },
+    
+    opponentCorrect() {
+      // Соперник не получает правильные ответы - всегда 0
+      return 0
+    },
+    
+    opponentAnswered() {
+      // Соперник не отвечает на вопросы - всегда 0
+      return 0
     },
     
     yourProgress() {
-      return Math.round((this.yourScore / 10) * 100);
+      return (this.yourScore / 10) * 100
     },
     
     opponentProgress() {
-      return Math.round((this.opponentScore / 10) * 100);
+      // Прогресс соперника всегда 0%
+      return 0
     }
-  },
-  
-  watch: {
-    currentQuestion() {
-      this.currentAnswer = this.answers[this.currentQuestion - 1]?.answer || '';
-      this.$nextTick(() => {
-        this.focusInput();
-      });
-    }
-  },
-  
-  mounted() {
-    this.focusInput();
   },
   
   methods: {
     getCurrentQuestion() {
-      return this.questions[this.currentQuestion - 1]?.question || 'Вопрос не найден';
+      return this.questions[this.currentQuestion - 1]
     },
     
-    getCorrectAnswer(questionNumber) {
-      return this.questions[questionNumber - 1]?.answer || '';
-    },
-    
-    focusInput() {
-      this.$nextTick(() => {
-        if (this.$refs.answerInput) {
-          this.$refs.answerInput.focus();
-        }
-      });
+    getCorrectAnswer() {
+      return this.correctAnswers[this.currentQuestion - 1]
     },
     
     checkAnswer() {
-      const questionIndex = this.currentQuestion - 1;
+      if (!this.currentAnswer.trim() || this.answers[this.currentQuestion - 1].answered) return
       
-      if (this.answers[questionIndex].answered) {
-        return;
-      }
+      const isCorrect = this.currentAnswer.trim().toLowerCase() === 
+                       this.getCorrectAnswer().toLowerCase()
       
-      const userAnswer = this.currentAnswer.trim();
-      
-      if (!userAnswer) {
-        return;
-      }
-      
-      const correctAnswer = this.questions[questionIndex].answer;
-      const isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
-      
-      this.answers[questionIndex] = {
-        answer: userAnswer,
+      this.answers[this.currentQuestion - 1] = {
+        answer: this.currentAnswer,
         answered: true,
         correct: isCorrect
-      };
+      }
       
       if (isCorrect) {
-        this.yourScore++;
-        
-        setTimeout(() => {
-          if (Math.random() > 0.3) {
-            this.opponentScore++;
-            this.opponentCorrect++;
-          }
-          this.opponentAnswered++;
-        }, 500 + Math.random() * 1000);
-      } else {
-        setTimeout(() => {
-          if (Math.random() > 0.5) {
-            this.opponentScore++;
-            this.opponentCorrect++;
-          }
-          this.opponentAnswered++;
-        }, 800 + Math.random() * 1200);
+        this.yourScore++
       }
       
-      // Мгновенный переход к следующему вопросу
       if (this.currentQuestion < 10) {
-        this.currentQuestion++;
+        this.currentQuestion++
+        this.currentAnswer = ''
       }
-      
-      this.$emit('answer-checked', {
-        question: this.currentQuestion,
-        isCorrect: isCorrect,
-        score: this.yourScore
-      });
     },
     
     finishTest() {
-      const results = {
-        yourScore: this.yourScore,
-        opponentScore: this.opponentScore,
-        yourCorrect: this.answeredCorrectly,
-        opponentCorrect: this.opponentCorrect,
-        totalQuestions: 10
-      };
-      
-      this.$router.push({
-        name: 'ResultsPage',
-        params: { results: JSON.stringify(results) }
-      });
+      this.$router.push('/PvP/result');
     }
   }
 }
