@@ -53,6 +53,11 @@ const router = createRouter({
       component: () => import('../PvP/pvpAnswer.vue'),
     },
     {
+      path: '/PvP/Result',
+      name: 'result',
+      component: () => import('../PvP/pvpResult.vue'),
+    },
+    {
       path: '/register',
       name: 'register',
       // route level code-splitting
