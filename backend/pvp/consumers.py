@@ -1,4 +1,3 @@
-
 import json
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -20,7 +19,7 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
             await self.close()
             return
 
-        is_participant = await self.check_participation(self.match_id, self.user)
+        is_participant = await self.check_participation(self.match_id, self.user.id)
         if not is_participant:
             await self.close()
             return
@@ -50,13 +49,12 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                 await self.handle_answer_submission(answer_text)
 
     async def handle_answer_submission(self, answer_text):
-        match = await self.get_match_instance()
-        if match.status in ['finished', 'cancelled']:
+        match_status = await self.get_match_status()
+        if match_status in ['finished', 'cancelled']:
             await self.send_json({'error': 'Матч уже завершён'})
             return
 
-
-        both_submitted = await self.save_answer_to_db(match, answer_text)
+        both_submitted = await self.save_answer_to_db(answer_text)
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -67,7 +65,7 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
         )
 
         if both_submitted:
-            result_data = await self.finalize_match_logic(match.id)
+            result_data = await self.finalize_match_logic(self.match_id)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -89,10 +87,10 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
         })
 
     @database_sync_to_async
-    def check_participation(self, match_id, user):
+    def check_participation(self, match_id, user_id):
         try:
             match = Match.objects.get(id=match_id)
-            return match.player1 == user or match.player2 == user
+            return match.player1_id == user_id or match.player2_id == user_id
         except Match.DoesNotExist:
             return False
 
@@ -106,19 +104,24 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
             return {}
 
     @database_sync_to_async
-    def get_match_instance(self):
-        return Match.objects.select_related('task', 'player1', 'player2').get(id=self.match_id)
+    def get_match_status(self):
+        try:
+            match = Match.objects.get(id=self.match_id)
+            return match.status
+        except Match.DoesNotExist:
+            return 'cancelled'
 
     @database_sync_to_async
-    def save_answer_to_db(self, match, answer):
+    def save_answer_to_db(self, answer):
+        match = Match.objects.select_related('task', 'player1', 'player2').get(id=self.match_id)
         is_correct = (answer.strip().lower() == match.task.correct_answer.strip().lower())
         now = timezone.now()
 
-        if match.player1 == self.user:
+        if match.player1_id == self.user.id:
             match.player1_answer = answer
             match.player1_submitted_at = now
             match.player1_correct = is_correct
-        elif match.player2 == self.user:
+        elif match.player2_id == self.user.id:
             match.player2_answer = answer
             match.player2_submitted_at = now
             match.player2_correct = is_correct
