@@ -22,13 +22,14 @@ class OverallStatsView(APIView):
         user = request.user
         total_attempts = TaskAttempt.objects.filter(user=user).count()
         correct_answers = TaskAttempt.objects.filter(user=user, is_correct=True).count()
-
         accuracy = (correct_answers / total_attempts) if total_attempts > 0 else 0
 
         data = {
+            'username': user.username,
             'total_attempts': total_attempts,
             'correct_answers': correct_answers,
-            'accuracy': accuracy
+            'accuracy': accuracy,
+            'accuracy_percent': round(accuracy * 100, 1) if total_attempts > 0 else 0.0
         }
 
         serializer = OverallStatsSerializer(data)
@@ -113,3 +114,46 @@ class RecentAttemptsView(APIView):
         attempts = TaskAttempt.objects.filter(user=request.user)[:20]
         serializer = AttemptSerializer(attempts, many=True)
         return Response(serializer.data)
+
+class SubjectsChartDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        subjects = TaskAttempt.objects.filter(user=user) \
+            .values('subject') \
+            .annotate(
+                total=Count('id'),
+                correct=Count('id', filter=Q(is_correct=True))
+            )
+
+        labels = []
+        data = []
+        for item in subjects:
+            subject_code = item['subject']
+            subject_name = dict(Task.SUBJECTS).get(subject_code, subject_code)
+            total = item['total']
+            correct = item['correct']
+            accuracy = round((correct / total) * 100, 1) if total > 0 else 0
+
+            labels.append(subject_name)
+            data.append(accuracy)
+
+        return Response({
+            "labels": labels,
+            "data": data
+        })
+
+class AccuracyChartDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        total = TaskAttempt.objects.filter(user=user).count()
+        correct = TaskAttempt.objects.filter(user=user, is_correct=True).count()
+        incorrect = total - correct
+
+        return Response([
+            {"name": "Правильно", "value": correct, "color": "#06D6A0"},
+            {"name": "Неправильно", "value": incorrect, "color": "#EF476F"}
+        ])

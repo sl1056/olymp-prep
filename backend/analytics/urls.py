@@ -3,7 +3,7 @@ from .views import (
     OverallStatsView,
     SubjectStatsView,
     DifficultyStatsView,
-    RecentAttemptsView
+    RecentAttemptsView, SubjectsChartDataView, AccuracyChartDataView
 )
 
 urlpatterns = [
@@ -11,4 +11,6 @@ urlpatterns = [
     path('subjects/', SubjectStatsView.as_view(), name='analytics-subjects'),
     path('difficulty/', DifficultyStatsView.as_view(), name='analytics-difficulty'),
     path('recent/', RecentAttemptsView.as_view(), name='analytics-recent'),
+    path('chart/subjects/', SubjectsChartDataView.as_view()),
+    path('chart/accuracy/', AccuracyChartDataView.as_view()),
 ]

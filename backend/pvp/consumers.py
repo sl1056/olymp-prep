@@ -106,7 +106,7 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                 }
             )
 
-  
+
 
     @database_sync_to_async
     def check_participation(self, match_id, user_id):

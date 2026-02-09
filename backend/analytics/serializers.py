@@ -17,11 +17,11 @@ class AttemptSerializer(serializers.ModelSerializer):
 
 
 class OverallStatsSerializer(serializers.Serializer):
+    username = serializers.CharField()
     total_attempts = serializers.IntegerField()
     correct_answers = serializers.IntegerField()
     accuracy = serializers.FloatField()
-    accuracy_percent = serializers.SerializerMethodField()
-
+    accuracy_percent = serializers.FloatField()
     def get_accuracy_percent(self, obj):
         return round(obj['accuracy'] * 100, 1) if obj['accuracy'] else 0.0
 
