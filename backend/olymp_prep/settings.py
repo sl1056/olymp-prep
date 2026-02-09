@@ -41,11 +41,13 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'django_filters',
+    'import_export',
     'users.apps.UsersConfig',
     'tasks.apps.TasksConfig',
     'channels',
     'pvp.apps.PvpConfig',
     'analytics.apps.AnalyticsConfig',
+
 ]
 
 REST_FRAMEWORK = {
