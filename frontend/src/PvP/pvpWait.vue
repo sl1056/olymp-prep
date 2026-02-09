@@ -62,44 +62,170 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios';
 
-const router = useRouter()
+export default {
+  name: 'YourComponentName',
+  data() {
+    status: ''
+  },
 
-const currentMatch = ref({
-  subject: 'Математика',
-  difficulty: 'Средняя',
-  matchCode: 'AB12CD'
-})
+  async created() {
+    await this.fetchUserData();
+    await this.startStatusChecking();
+  },
 
-const invitationLink = computed(() => {
-  return `ССЫЛКА`
-})
-
-const handleCopyLink = async () => {
-  const linkText = invitationLink.value
+  beforeUnmount() {
+    // Очищаем интервал при уничтожении компонента
+    this.stopStatusChecking();
+  },
   
-  try {
-    await navigator.clipboard.writeText(linkText)
-  } catch {
-    const tempInput = document.createElement('input')
-    tempInput.value = linkText
-    document.body.appendChild(tempInput)
-    tempInput.select()
-    document.execCommand('copy')
-    document.body.removeChild(tempInput)
+  setup() {
+    const router = useRouter()
+
+    const currentMatch = ref({
+      subject: localStorage.getItem('currentMatchSubject'),
+      difficulty: localStorage.getItem('currentMatchDifficulty'),
+      matchCode: localStorage.getItem('currentMatchId')
+    })
+
+    const invitationLink = computed(() => {
+      return `ССЫЛКА`
+    })
+
+    const handleCopyLink = async () => {
+      const linkText = invitationLink.value
+      
+      try {
+        await navigator.clipboard.writeText(linkText)
+      } catch {
+        const tempInput = document.createElement('input')
+        tempInput.value = linkText
+        document.body.appendChild(tempInput)
+        tempInput.select()
+        document.execCommand('copy')
+        document.body.removeChild(tempInput)
+      }
+    }
+
+    const handleCancelMatch = () => {
+      const userConfirmed = confirm('Вы уверены, что хотите отменить матч?')
+      
+      if (userConfirmed) {
+        router.push('/')
+      }
+    }
+
+    return {
+      currentMatch,
+      invitationLink,
+      handleCopyLink,
+      handleCancelMatch
+    }
+  },
+
+  methods: {
+
+    async fetchUserData() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Token ${token}`;
+          const response = await axios.get('http://localhost:8000/api/auth/profile/');
+          this.userData = response.data;
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке данных пользователя:', err);
+        this.userData = null;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async checkStatus() {
+      try {
+        // Используем currentMatch.matchCode из ref
+        const matchCode = this.currentMatch?.matchCode;
+        if (!matchCode) {
+          console.error('Match code not found');
+          return;
+        }
+        
+        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchCode}`);
+        this.status = response.data.status;
+        console.log('Current status:', response.data);
+        
+        // Если статус показывает, что матч готов, можно перенаправить
+        if (response.data.status === 'active') {
+          this.stopStatusChecking();
+          this.$router.push(`/PvP/answer`);
+        }
+      } catch (err) {
+        console.error('Error checking match status:', err);
+      }
+    },
+
+    startStatusChecking() {
+      // Вызываем сразу один раз
+      this.checkStatus();
+      
+      // Затем устанавливаем интервал на каждую секунду
+      this.checkInterval = setInterval(() => {
+        this.checkStatus();
+      }, 1000);
+    },
+
+    stopStatusChecking() {
+      if (this.checkInterval) {
+        clearInterval(this.checkInterval);
+        this.checkInterval = null;
+      }
+    },
+
+    handleWebSocketMessage(data) {
+      console.log('Получено сообщение:', data);
+      
+      switch (data.type) {
+        case 'match_ready':
+          // Матч готов к началу (оба игрока подключились)
+          this.showWaitingModal = false;
+          this.$router.push(`/pvp/match/${this.matchId}`);
+          break;
+          
+        case 'player_joined':
+          // В матч присоединился игрок (для хоста)
+          alert(`Игрок ${data.username} присоединился к матчу!`);
+          break;
+          
+        case 'match_cancelled':
+          // Матч отменен
+          this.showWaitingModal = false;
+          alert('Матч был отменен создателем');
+          break;
+          
+        case 'error':
+          alert(`Ошибка: ${data.message}`);
+          break;
+      }
+    },
+
+    cancelMatch() {
+      if (this.ws) {
+        const message = {
+          type: 'cancel_match'
+        };
+        this.ws.send(JSON.stringify(message));
+      }
+      this.showWaitingModal = false;
+      this.matchId = null;
+      this.matchCode = '';
+    },
   }
 }
 
-const handleCancelMatch = () => {
-  const userConfirmed = confirm('Вы уверены, что хотите отменить матч?')
-  
-  if (userConfirmed) {
-    router.push('/')
-  }
-}
 </script>
 
 <style scoped>

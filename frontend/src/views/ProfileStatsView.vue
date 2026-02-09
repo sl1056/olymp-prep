@@ -121,12 +121,17 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import HeaderEnter from '@/components/HeaderEnter.vue'
+import axios from 'axios';
 
 export default {
   name: 'ProfileStats',
   
   components: {
     HeaderEnter
+  },
+
+  async created() {
+    await this.getAnalytics();
   },
   
   setup() {
@@ -368,7 +373,26 @@ export default {
       subjectsCount,
       handleBack
     }
+  },
+  methods: {
+    async getAnalytics() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            const response = await axios.get('http://localhost:8000/api/analytics/overall/');
+            this.userData = response.data;
+            console.log(response.data)
+        }
+      } catch (err) {
+          console.error('Ошибка при загрузке статистики пользователя:', err);
+          this.userData = null;
+      } finally {
+          this.isLoading = false;
+      }
+    },
   }
+
 }
 </script>
 

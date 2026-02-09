@@ -94,18 +94,29 @@
         </button>
         <button 
           class="btn-start" 
-          @click="launchMatch"
+          @click="createMatch"
           :disabled="!canStart"
           :class="{ loading: isStarting }"
         >
           {{ startButtonText }}
         </button>
       </div>
+      <!-- Модальное окно ожидания -->
+      <div v-if="showWaitingModal" class="modal-overlay">
+        <div class="modal">
+          <h3>Ожидание соперника</h3>
+          <p>Код матча: <strong>{{ matchCode }}</strong></p>
+          <p>Поделитесь этим кодом с другом</p>
+          <div class="loader"></div>
+          <button @click="cancelMatch" class="cancel-btn">ОТМЕНИТЬ</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
 // Хардкод для предметов - в проде будет API
 const subjectsData = [
   { id: 'math', name: 'Математика', icon: '∫' },
@@ -148,6 +159,7 @@ export default {
       // Текущие выборы
       currentSubject: 'math',
       currentDifficulty: 'medium',
+      userData: '',
       
       // Опции
       options: {
@@ -169,6 +181,10 @@ export default {
         { id: 'hard', name: 'Сложная', hint: 'экспертный уровень' }
       ]
     }
+  },
+
+  async created() {
+    await this.fetchUserData();
   },
   
   computed: {
@@ -195,6 +211,22 @@ export default {
   },
   
   methods: {
+    async fetchUserData() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Token ${token}`;
+          const response = await axios.get('http://localhost:8000/api/auth/profile/');
+          this.userData = response.data;
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке данных пользователя:', err);
+        this.userData = null;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     // Выбор предмета
     pickSubject(subject) {
       console.log('Выбрали предмет:', subject.name)
@@ -238,15 +270,14 @@ export default {
       this.$router.back()
     },
     
-    // Запуск матча
     async createMatch() {
       if (!this.userData) {
         alert('Пожалуйста, войдите в систему для создания матча');
         return;
       }
-
+    
       this.creatingMatch = true;
-      
+    
       try {
         // 1. Создаем матч на сервере
         const token = localStorage.getItem('authToken');
@@ -255,27 +286,65 @@ export default {
           {},
           {
             headers: {
-              'Authorization': `Token ${token}`
+              'Authorization': `Token ${token}`,
+              'Content-Type': 'application/json'
             }
           }
         );
-
+        
         this.matchId = response.data.match_id;
         this.matchCode = response.data.code;
         
-        // 2. Подключаемся к WebSocket
+        localStorage.setItem('currentMatchId', this.matchId);
+        localStorage.setItem('currentMatchCode', this.matchCode);
+        localStorage.setItem('currentMatchDifficulty', this.currentDifficulty);
+        localStorage.setItem('currentMatchSubject', this.currentSubject);
+        localStorage.setItem('matchRole', 'host');
+        
+        // 2. Подключаем WebSocket для матча
         this.connectWebSocket('host');
         
-        // 3. Показываем окно ожидания
-        this.showWaitingModal = true;
+        // 3. Переходим на страницу ожидания
+        await this.$router.push('/PvP/create/wait');
+        
+        console.log('Матч создан:', response.data);
         
       } catch (error) {
         console.error('Ошибка при создании матча:', error);
+        if (error.response) {
+          console.error('Ответ сервера:', error.response.data);
+        }
         alert('Не удалось создать матч. Попробуйте еще раз.');
       } finally {
         this.creatingMatch = false;
       }
     },
+
+    connectWebSocket(role) {
+    const token = localStorage.getItem('authToken');
+    // Добавляем токен как параметр запроса
+    const wsUrl = `ws://localhost:8000/ws/pvp/${this.matchId}/?token=${token}`;
+
+    this.socket = new WebSocket(wsUrl);
+    
+    this.socket.onopen = () => {
+        console.log('WebSocket соединение установлено');
+    };
+
+    this.socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        this.handleWebSocketMessage(data);
+    };
+
+    this.socket.onerror = (error) => {
+        console.error('WebSocket ошибка:', error);
+    };
+
+    this.socket.onclose = (event) => {
+        console.log('WebSocket соединение закрыто', event.code, event.reason);
+    };
+},
+
     
     // Заглушка для API
     fakeApiCall() {

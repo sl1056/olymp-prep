@@ -219,6 +219,7 @@ export default {
         })
         
         userData.value = response.data
+
       } catch (err) {
         console.error('Ошибка при загрузке данных пользователя:', err)
         router.push('/auth')

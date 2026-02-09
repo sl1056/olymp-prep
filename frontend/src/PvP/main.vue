@@ -25,17 +25,6 @@
         </button>
       </div>
     </div>
-
-    <!-- Модальное окно ожидания -->
-    <div v-if="showWaitingModal" class="modal-overlay">
-      <div class="modal">
-        <h3>Ожидание соперника</h3>
-        <p>Код матча: <strong>{{ matchCode }}</strong></p>
-        <p>Поделитесь этим кодом с другом</p>
-        <div class="loader"></div>
-        <button @click="cancelMatch" class="cancel-btn">ОТМЕНИТЬ</button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -57,7 +46,7 @@ export default {
       joiningMatch: false,
       showWaitingModal: false,
       ws: null,
-      matchId: null
+      matchId: null,
     }
   },
 
@@ -90,47 +79,11 @@ export default {
     },
 
     async createMatch() {
-      if (!this.userData) {
-        alert('Пожалуйста, войдите в систему для создания матча');
-        return;
-      }
-
-      this.creatingMatch = true;
-      
-      try {
-        // 1. Создаем матч на сервере
-        const token = localStorage.getItem('authToken');
-        const response = await axios.post(
-          'http://localhost:8000/api/pvp/create/',
-          {},
-          {
-            headers: {
-              'Authorization': `Token ${token}`
-            }
-          }
-        );
-
-        this.matchId = response.data.match_id;
-        this.matchCode = response.data.code;
-        
-        // 2. Подключаемся к WebSocket
-        this.connectWebSocket('host');
-        
-        // 3. Показываем окно ожидания
-        this.showWaitingModal = true;
-
-        console.log('Матч создан')
-        
-      } catch (error) {
-        console.error('Ошибка при создании матча:', error);
-        alert('Не удалось создать матч. Попробуйте еще раз.');
-      } finally {
-        this.creatingMatch = false;
-      }
+      this.$router.push('/PvP/create')
     },
 
     async joinMatch() {
-      const code = this.matchCode.trim();
+      const code = this.matchCode;
       
       if (!code) {
         alert('Введите код матча');
@@ -144,26 +97,21 @@ export default {
 
       this.joiningMatch = true;
       
-      try {
-        // 1. Проверяем существование матча
+      try { 
+        // 1. Проверяем существование матча 
         const token = localStorage.getItem('authToken');
         const response = await axios.post(
-          'http://localhost:8000/api/pvp/join/',
-          { code: code },
-          {
-            headers: {
-              'Authorization': `Token ${token}`
-            }
-          }
+          `http://localhost:8000/api/pvp/join/${code}/`
         );
+
+        console.log(response.data)
 
         this.matchId = response.data.match_id;
         
         // 2. Подключаемся к WebSocket как участник
-        this.connectWebSocket('player');
-        
-        // 3. Перенаправляем на страницу матча
-        this.$router.push(`/pvp/match/${this.matchId}`);
+        //this.connectWebSocket('player');
+
+        await this.$router.push('/PvP/answer');
         
       } catch (error) {
         console.error('Ошибка при присоединении к матчу:', error);

@@ -272,10 +272,11 @@ export default {
         } else {
           this.taskCollection = [];
         }
-        
-      } catch (error) {
-        console.error('Ошибка загрузки заданий:', error);
-        this.fetchError = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
+      } catch (err) {
+        console.error('Ошибка при загрузке заданий:', err);
+        this.$router.push('/auth');
+        this.error = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
+        this.allTasks = this.getMockTasks();
       } finally {
         this.loading = false;
       }

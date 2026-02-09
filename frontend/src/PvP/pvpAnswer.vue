@@ -168,6 +168,15 @@ export default {
       ]
     }
   },
+
+  async created() {
+    await this.startStatusChecking();
+  },
+
+  beforeUnmount() {
+    // Очищаем интервал при уничтожении компонента
+    this.stopStatusChecking();
+  },
   
   computed: {
     answeredQuestions() {
@@ -231,7 +240,47 @@ export default {
     
     finishTest() {
       this.$router.push('/PvP/result');
-    }
+    },
+
+    async checkStatus() {
+      try {
+        // Используем currentMatch.matchCode из ref
+        const matchCode = this.currentMatch?.matchCode;
+        if (!matchCode) {
+          console.error('Match code not found');
+          return;
+        }
+        
+        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchCode}`);
+        this.status = response.data.status;
+        console.log('Current status:', response.data);
+        
+        // Если статус показывает, что матч готов, можно перенаправить
+        if (response.data.status === 'active') {
+          this.stopStatusChecking();
+          this.$router.push(`/PvP/answer`);
+        }
+      } catch (err) {
+        console.error('Error checking match status:', err);
+      }
+    },
+
+    startStatusChecking() {
+      // Вызываем сразу один раз
+      this.checkStatus();
+      
+      // Затем устанавливаем интервал на каждую секунду
+      this.checkInterval = setInterval(() => {
+        this.checkStatus();
+      }, 1000);
+    },
+
+    stopStatusChecking() {
+      if (this.checkInterval) {
+        clearInterval(this.checkInterval);
+        this.checkInterval = null;
+      }
+    },
   }
 }
 </script>

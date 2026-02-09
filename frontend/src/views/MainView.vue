@@ -21,9 +21,10 @@
                 try {
                     const token = localStorage.getItem('authToken');
                     if (token) {
-                        axios.defaults.headers.common['Authorization'] = `Token ${token}`;
+                        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                         const response = await axios.get('http://localhost:8000/api/auth/profile/');
                         this.userData = response.data;
+                        console.log(response.data)
                     }
                 } catch (err) {
                     console.error('Ошибка при загрузке данных пользователя:', err);

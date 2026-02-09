@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
     },
     {
+      path: '/profile/stats',
+      name: 'stats',
+      component: () => import('../views/ProfileStatsView.vue'),
+    },
+    {
       path: '/tasks',
       name: 'tasks',
       component: () => import('../views/StudyViewNotAnswer.vue'),
