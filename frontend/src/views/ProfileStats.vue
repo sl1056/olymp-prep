@@ -6,15 +6,13 @@
     <HeaderEnter />
     
     <div class="container">
-      <!-- Кнопка возврата -->
       <div class="back-section">
-        <button class="back-btn" @click="$router.go(-1)">
+        <button class="back-btn" @click="handleBack">
           <i class="fas fa-arrow-left"></i> Назад к профилю
         </button>
-        <h1 class="page-title">📊 Полная статистика</h1>
+        <h1 class="page-title">Полная статистика</h1>
       </div>
 
-      <!-- Карточка пользователя -->
       <div class="user-card">
         <div class="user-header">
           <div class="user-avatar" :style="avatarStyle">
@@ -22,7 +20,7 @@
           </div>
           <div class="user-info">
             <h2 class="username">{{ userData?.username || 'Пользователь' }}</h2>
-            <div class="user-id">ID: 2562341</div>
+            <div class="user-id">ID: {{ userId }}</div>
           </div>
         </div>
         <div class="quick-stats">
@@ -41,9 +39,7 @@
         </div>
       </div>
 
-      <!-- Основные диаграммы -->
       <div class="charts-container">
-        <!-- 1. Распределение по предметам -->
         <div class="chart-card">
           <div class="chart-header">
             <h3 class="chart-title">
@@ -65,7 +61,6 @@
           </div>
         </div>
 
-        <!-- 2. Точность по категориям (круговая) -->
         <div class="chart-card">
           <div class="chart-header">
             <h3 class="chart-title">
@@ -77,7 +72,7 @@
               <canvas ref="accuracyChart"></canvas>
             </div>
             <div class="accuracy-details">
-              <div v-for="(category, index) in accuracyData" :key="index" class="accuracy-item">
+              <div v-for="category in accuracyData" :key="category.name" class="accuracy-item">
                 <div class="category-name">
                   <span class="color-indicator" :style="{ backgroundColor: category.color }"></span>
                   {{ category.name }}
@@ -92,10 +87,9 @@
         </div>
       </div>
 
-      <!-- Подробная статистика -->
       <div class="detailed-stats">
         <h3 class="section-title">
-          <i class="fas fa-list-alt"></i> Подробная статистика по предметам
+          Подробная статистика по предметам
         </h3>
         <div class="subjects-table">
           <div class="table-header">
@@ -104,7 +98,7 @@
             <div class="table-col">Средний балл</div>
             <div class="table-col">Лучший результат</div>
           </div>
-          <div v-for="(subject, index) in detailedSubjects" :key="index" class="table-row">
+          <div v-for="subject in detailedSubjects" :key="subject.name" class="table-row">
             <div class="table-col subject-name">
               {{ subject.name }}
             </div>
@@ -119,7 +113,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -128,7 +121,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import HeaderEnter from '@/components/HeaderEnter.vue'
-import axios from 'axios'
 
 export default {
   name: 'ProfileStats',
@@ -140,28 +132,25 @@ export default {
   setup() {
     const router = useRouter()
     
-    // Refs для графиков
     const subjectsChart = ref(null)
     const accuracyChart = ref(null)
-    
-    // Ссылки на объекты Chart для очистки
     const chartInstances = ref([])
     
-    // Данные пользователя
     const userData = ref({
-      username: 'ЮЗЕРНЕЙМ',
+      username: 'bentalin',
     })
     
-    // Статистические данные
+    const userId = '2562341'
+    
     const totalTests = ref(156)
     const correctRate = ref(85)
     const pvpBattles = ref(181)
     
-    // Данные для диаграмм
     const subjectsData = ref({
       labels: ['Математика', 'Информатика', 'Физика', 'Английский язык', 'Химия', 'Биология', 'Физкультура', 'Русский язык'],
       data: [92, 89, 87, 85, 83, 81, 88, 86]
     })
+    
     const accuracyData = ref([
       { name: 'Математика', value: 92, count: 28, color: '#FF6B6B' },
       { name: 'Естественные науки', value: 85, count: 32, color: '#4ECDC4' },
@@ -170,22 +159,16 @@ export default {
       { name: 'Технические', value: 88, count: 18, color: '#EF476F' }
     ])
     
-    // Детальная статистика по предметам - УДАЛЕНЫ ВСЕ studyTime
     const detailedSubjects = ref([
-      // Математика
       { name: 'Математика', tests: 25, avgScore: 95, bestScore: 100 },
       { name: 'Геометрия', tests: 15, avgScore: 85, bestScore: 96 },
       { name: 'Дискретная математика', tests: 12, avgScore: 78, bestScore: 90 },
-      
-      // Естественные науки
       { name: 'Физика', tests: 22, avgScore: 87, bestScore: 98 },
       { name: 'Химия', tests: 18, avgScore: 83, bestScore: 95 },
       { name: 'Биология', tests: 20, avgScore: 81, bestScore: 94 },
       { name: 'Экология', tests: 10, avgScore: 75, bestScore: 88 },
       { name: 'География', tests: 14, avgScore: 77, bestScore: 92 },
       { name: 'Астрономия', tests: 8, avgScore: 72, bestScore: 85 },
-      
-      // Языки
       { name: 'Русский язык', tests: 25, avgScore: 88, bestScore: 97 },
       { name: 'Английский язык', tests: 30, avgScore: 85, bestScore: 99 },
       { name: 'Немецкий язык', tests: 12, avgScore: 76, bestScore: 89 },
@@ -193,37 +176,38 @@ export default {
       { name: 'Китайский язык', tests: 8, avgScore: 68, bestScore: 82 },
       { name: 'Испанский язык', tests: 9, avgScore: 71, bestScore: 85 },
       { name: 'Латинский язык', tests: 5, avgScore: 65, bestScore: 80 },
-      
-      // Гуманитарные науки
       { name: 'Литература', tests: 18, avgScore: 82, bestScore: 95 },
       { name: 'История', tests: 16, avgScore: 79, bestScore: 93 },
       { name: 'Обществознание', tests: 14, avgScore: 76, bestScore: 90 },
       { name: 'Право', tests: 10, avgScore: 73, bestScore: 87 },
-      
-      // Экономика
       { name: 'Экономика', tests: 15, avgScore: 75, bestScore: 92 },
       { name: 'Финансовая грамотность', tests: 12, avgScore: 80, bestScore: 95 },
-      
-      // Технические науки
       { name: 'Информатика', tests: 24, avgScore: 91, bestScore: 98 },
       { name: 'Робототехника', tests: 10, avgScore: 84, bestScore: 96 },
       { name: 'Искусственный интеллект', tests: 8, avgScore: 86, bestScore: 97 },
       { name: 'Технология', tests: 12, avgScore: 78, bestScore: 91 },
-      
-      // Искусство и спорт
       { name: 'Искусство (МХК)', tests: 10, avgScore: 82, bestScore: 94 },
       { name: 'Физкультура', tests: 15, avgScore: 88, bestScore: 99 },
       { name: 'ОБЖ', tests: 8, avgScore: 85, bestScore: 96 }
     ])
     
-    // Вычисляемые свойства
     const avatarStyle = computed(() => {
       const colors = {
-        'Б': ['#FFD166', '#FF9E6D'],
-        'default': ['#4A7B9D', '#224762']
+        'B': ['#FFD166', '#FF9E6D'],
+      'A': ['#118AB2', '#06D6A0'],
+      'M': ['#EF476F', '#FF9E6D'],
+      'S': ['#4A7B9D', '#118AB2'],
+      'D': ['#224762', '#4A7B9D'],
+      'J': ['#06D6A0', '#118AB2'],
+      'K': ['#FF9E6D', '#EF476F'],
+      'P': ['#EF476F', '#FFD166'],
+      'R': ['#118AB2', '#06D6A0'],
+      'T': ['#4A7B9D', '#224762'],
+      'default': ['#FFD166', '#FF9E6D']
       }
-      const firstLetter = userData.value?.username?.charAt(0)?.toUpperCase() || ''
-      const colorSet = colors[firstLetter] || colors['default']
+      
+      const firstLetter = userData.value.username?.charAt(0)?.toUpperCase() || 'И'
+      const colorSet = colors[firstLetter] || colors.default
       
       return {
         background: `linear-gradient(135deg, ${colorSet[0]} 0%, ${colorSet[1]} 100%)`
@@ -231,7 +215,7 @@ export default {
     })
     
     const avatarLetter = computed(() => {
-      return userData.value?.username?.charAt(0)?.toUpperCase() || '?'
+      return userData.value.username?.charAt(0)?.toUpperCase() || 'И'
     })
     
     const bestSubject = computed(() => {
@@ -241,23 +225,25 @@ export default {
     
     const subjectsCount = computed(() => detailedSubjects.value.length)
     
+    const handleBack = () => {
+      router.go(-1)
+    }
+    
     const loadChartJS = () => {
       return new Promise((resolve, reject) => {
-        // Если Chart.js уже загружен
         if (typeof window.Chart !== 'undefined') {
           resolve(window.Chart)
           return
         }
         
-        // Загружаем Chart.js из CDN
         const script = document.createElement('script')
         script.src = 'https://cdn.jsdelivr.net/npm/chart.js'
         script.onload = () => {
-          console.log('Chart.js loaded successfully from CDN')
+          console.log('Chart.js загружен')
           resolve(window.Chart)
         }
         script.onerror = () => {
-          console.error('Failed to load Chart.js from CDN')
+          console.error('Не удалось загрузить Chart.js')
           reject(new Error('Не удалось загрузить Chart.js'))
         }
         document.head.appendChild(script)
@@ -268,7 +254,6 @@ export default {
       try {
         const Chart = await loadChartJS()
         
-        // Очищаем предыдущие графики
         chartInstances.value.forEach(chart => {
           if (chart && typeof chart.destroy === 'function') {
             chart.destroy()
@@ -276,7 +261,6 @@ export default {
         })
         chartInstances.value = []
         
-        // 1. Распределение по предметам (столбчатая)
         if (subjectsChart.value) {
           const subjectsCtx = subjectsChart.value.getContext('2d')
           const subjectsInstance = new Chart(subjectsCtx, {
@@ -316,7 +300,6 @@ export default {
           chartInstances.value.push(subjectsInstance)
         }
         
-        // 2. Точность по категориям (круговая)
         if (accuracyChart.value) {
           const accuracyCtx = accuracyChart.value.getContext('2d')
           const accuracyInstance = new Chart(accuracyCtx, {
@@ -342,8 +325,8 @@ export default {
         }
         
       } catch (error) {
-        console.error('Error rendering charts:', error)
-        // Показываем запасной вариант без графиков
+        console.error('Ошибка отрисовки графиков:', error)
+        
         document.querySelectorAll('.chart-wrapper').forEach(wrapper => {
           const fallback = document.createElement('div')
           fallback.className = 'chart-fallback'
@@ -354,16 +337,13 @@ export default {
       }
     }
     
-    // Жизненный цикл
     onMounted(() => {
-      // Загружаем данные пользователя (имитация)
       setTimeout(() => {
         renderCharts()
       }, 100)
     })
     
     onUnmounted(() => {
-      // Очищаем графики при размонтировании
       chartInstances.value.forEach(chart => {
         if (chart && typeof chart.destroy === 'function') {
           chart.destroy()
@@ -375,6 +355,7 @@ export default {
       subjectsChart,
       accuracyChart,
       userData,
+      userId,
       totalTests,
       correctRate,
       pvpBattles,
@@ -384,7 +365,8 @@ export default {
       avatarStyle,
       avatarLetter,
       bestSubject,
-      subjectsCount
+      subjectsCount,
+      handleBack
     }
   }
 }
@@ -547,7 +529,6 @@ export default {
   color: #4A7B9D;
 }
 
-/* Обертка для canvas */
 .chart-wrapper {
   flex: 1;
   min-height: 250px;
@@ -563,7 +544,6 @@ export default {
   display: block;
 }
 
-/* Особый стиль для круговой диаграммы */
 .chart-content {
   display: flex;
   flex: 1;
@@ -654,7 +634,6 @@ export default {
   color: #224762;
 }
 
-/* Запасной вариант для графиков */
 .chart-fallback {
   display: flex;
   align-items: center;
@@ -674,7 +653,6 @@ export default {
   color: '#EF476F';
 }
 
-/* Детальная статистика */
 .detailed-stats {
   background: white;
   border-radius: 18px;
@@ -701,7 +679,7 @@ export default {
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr; /* Изменено с 5 на 4 колонки */
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   background: '#224762';
   color: white;
   padding: 18px 20px;
@@ -711,7 +689,7 @@ export default {
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr; /* Изменено с 5 на 4 колонки */
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   padding: 18px 20px;
   border-bottom: 1px solid #F0EBE2;
   align-items: center;
@@ -775,7 +753,6 @@ export default {
   font-size: 18px;
 }
 
-/* Адаптивность */
 @media (max-width: 1200px) {
   .charts-container {
     grid-template-columns: 1fr;
