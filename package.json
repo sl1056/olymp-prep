@@ -1,5 +1,6 @@
 {
   "dependencies": {
     "router": "^2.2.0"
+    "chart.js": "^4.4.0"
   }
 }
