@@ -2,6 +2,7 @@ import json
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
+from django.db import transaction
 
 from .models import Match
 from .elo import calculate_elo
@@ -86,7 +87,12 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
             await self.send_json({'error': 'Матч уже завершён'})
             return
 
-        both_submitted = await self.save_answer_to_db(answer_text)
+        submission_result = await self.save_answer_to_db(answer_text)
+        if not submission_result['accepted']:
+            await self.send_json({'error': submission_result['reason']})
+            return
+
+        both_submitted = submission_result['both_submitted']
 
         await self.channel_layer.group_send(
             self.group_name,
@@ -126,74 +132,137 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def save_answer_to_db(self, answer):
-        match = Match.objects.select_related('task').get(id=self.match_id)
-        is_correct = answer.lower() == match.task.correct_answer.lower()
-        now = timezone.now()
+        return self._save_answer_to_db(answer)
 
-        if match.player1_id == self.user.id:
-            match.player1_answer = answer
-            match.player1_submitted_at = now
-            match.player1_correct = is_correct
-        elif match.player2_id == self.user.id:
-            match.player2_answer = answer
-            match.player2_submitted_at = now
-            match.player2_correct = is_correct
+    def _save_answer_to_db(self, answer):
+        with transaction.atomic():
+            match = Match.objects.select_for_update().select_related('task').get(id=self.match_id)
 
-        match.save()
+            if match.status != 'active' or not match.player2_id:
+                return {
+                    'accepted': False,
+                    'both_submitted': False,
+                    'reason': 'Матч ещё не готов к ответам',
+                }
 
-        return bool(match.player1_submitted_at and match.player2_submitted_at)
+            is_correct = answer.strip().casefold() == match.task.correct_answer.strip().casefold()
+            now = timezone.now()
+
+            if match.player1_id == self.user.id:
+                if match.player1_submitted_at:
+                    return {
+                        'accepted': False,
+                        'both_submitted': False,
+                        'reason': 'Ответ уже отправлен',
+                    }
+                match.player1_answer = answer
+                match.player1_submitted_at = now
+                match.player1_correct = is_correct
+            elif match.player2_id == self.user.id:
+                if match.player2_submitted_at:
+                    return {
+                        'accepted': False,
+                        'both_submitted': False,
+                        'reason': 'Ответ уже отправлен',
+                    }
+                match.player2_answer = answer
+                match.player2_submitted_at = now
+                match.player2_correct = is_correct
+            else:
+                return {
+                    'accepted': False,
+                    'both_submitted': False,
+                    'reason': 'Вы не участник матча',
+                }
+
+            match.save(update_fields=[
+                'player1_answer',
+                'player2_answer',
+                'player1_submitted_at',
+                'player2_submitted_at',
+                'player1_correct',
+                'player2_correct',
+            ])
+
+            return {
+                'accepted': True,
+                'both_submitted': bool(match.player1_submitted_at and match.player2_submitted_at),
+                'reason': None,
+            }
 
     @database_sync_to_async
     def finalize_match_logic(self, match_id):
-        from users.models import Profile
+        return self._finalize_match_logic(match_id)
 
-        match = Match.objects.select_related(
-            'player1__profile',
-            'player2__profile',
-            'task'
-        ).get(id=match_id)
+    def _finalize_match_logic(self, match_id):
+        with transaction.atomic():
+            match = Match.objects.select_for_update().select_related(
+                'player1__profile',
+                'player2__profile',
+                'task'
+            ).get(id=match_id)
 
-        if match.player1_correct and not match.player2_correct:
-            result = 1.0
-        elif match.player2_correct and not match.player1_correct:
-            result = 0.0
-        else:
-            result = 0.5
+            if match.status == 'finished':
+                if match.player1_correct and not match.player2_correct:
+                    winner = 'player1'
+                elif match.player2_correct and not match.player1_correct:
+                    winner = 'player2'
+                else:
+                    winner = 'draw'
 
-        p1_rating = match.player1.profile.rating
-        p2_rating = match.player2.profile.rating
+                return {
+                    'match_id': match.id,
+                    'winner': winner,
+                    'player1_username': match.player1.username,
+                    'player2_username': match.player2.username,
+                    'player1_new_rating': match.player1.profile.rating,
+                    'player2_new_rating': match.player2.profile.rating,
+                    'player1_correct': match.player1_correct,
+                    'player2_correct': match.player2_correct,
+                    'correct_answer': match.task.correct_answer,
+                }
 
-        new_p1, new_p2 = calculate_elo(p1_rating, p2_rating, result)
+            if match.player1_correct and not match.player2_correct:
+                result = 1.0
+            elif match.player2_correct and not match.player1_correct:
+                result = 0.0
+            else:
+                result = 0.5
 
-        match.player1.profile.rating = new_p1
-        match.player2.profile.rating = new_p2
-        match.player1.profile.solved_tasks += 1
-        match.player2.profile.solved_tasks += 1
+            p1_rating = match.player1.profile.rating
+            p2_rating = match.player2.profile.rating
 
-        if match.player1_correct:
-            match.player1.profile.correct_answers += 1
-        if match.player2_correct:
-            match.player2.profile.correct_answers += 1
+            new_p1, new_p2 = calculate_elo(p1_rating, p2_rating, result)
 
-        match.player1.profile.save()
-        match.player2.profile.save()
+            match.player1.profile.rating = new_p1
+            match.player2.profile.rating = new_p2
+            match.player1.profile.solved_tasks += 1
+            match.player2.profile.solved_tasks += 1
 
-        match.status = 'finished'
-        match.finished_at = timezone.now()
-        match.save()
+            if match.player1_correct:
+                match.player1.profile.correct_answers += 1
+            if match.player2_correct:
+                match.player2.profile.correct_answers += 1
 
-        return {
-            'match_id': match.id,
-            'winner': (
-                'player1' if result == 1.0 else
-                'player2' if result == 0.0 else
-                'draw'
-            ),
-            'player1_username': match.player1.username,
-            'player2_username': match.player2.username,
-            'player1_new_rating': new_p1,
-            'player2_new_rating': new_p2,
-            'player1_correct': match.player1_correct,
-            'player2_correct': match.player2_correct,
-            'correct_answer': match.task.correct_answer,
-        }
+            match.player1.profile.save()
+            match.player2.profile.save()
+
+            match.status = 'finished'
+            match.finished_at = timezone.now()
+            match.save(update_fields=['status', 'finished_at'])
+
+            return {
+                'match_id': match.id,
+                'winner': (
+                    'player1' if result == 1.0 else
+                    'player2' if result == 0.0 else
+                    'draw'
+                ),
+                'player1_username': match.player1.username,
+                'player2_username': match.player2.username,
+                'player1_new_rating': new_p1,
+                'player2_new_rating': new_p2,
+                'player1_correct': match.player1_correct,
+                'player2_correct': match.player2_correct,
+                'correct_answer': match.task.correct_answer,
+            }
