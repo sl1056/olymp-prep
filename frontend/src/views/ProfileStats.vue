@@ -43,29 +43,7 @@
 
       <!-- Основные диаграммы -->
       <div class="charts-container">
-        <!-- 1. Успеваемость по месяцам -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3 class="chart-title">
-              <i class="fas fa-chart-line"></i> Успеваемость по месяцам
-            </h3>
-          </div>
-          <div class="chart-wrapper">
-            <canvas ref="progressChart"></canvas>
-          </div>
-          <div class="chart-summary">
-            <div class="summary-item">
-              <span class="summary-label">Лучший месяц:</span>
-              <span class="summary-value">{{ bestMonth }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Рост за год:</span>
-              <span class="summary-value">{{ yearlyGrowth }}%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. Распределение по предметам -->
+        <!-- 1. Распределение по предметам -->
         <div class="chart-card">
           <div class="chart-header">
             <h3 class="chart-title">
@@ -87,29 +65,7 @@
           </div>
         </div>
 
-        <!-- 3. Активность по дням недели -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3 class="chart-title">
-              <i class="fas fa-calendar-week"></i> Активность по дням
-            </h3>
-          </div>
-          <div class="chart-wrapper">
-            <canvas ref="activityChart"></canvas>
-          </div>
-          <div class="chart-summary">
-            <div class="summary-item">
-              <span class="summary-label">Самый активный:</span>
-              <span class="summary-value">{{ mostActiveDay }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Всего сессий:</span>
-              <span class="summary-value">{{ totalSessions }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. Точность по категориям (круговая) -->
+        <!-- 2. Точность по категориям (круговая) -->
         <div class="chart-card">
           <div class="chart-header">
             <h3 class="chart-title">
@@ -147,11 +103,9 @@
             <div class="table-col">Пройдено тестов</div>
             <div class="table-col">Средний балл</div>
             <div class="table-col">Лучший результат</div>
-            <div class="table-col">Время изучения</div>
           </div>
           <div v-for="(subject, index) in detailedSubjects" :key="index" class="table-row">
             <div class="table-col subject-name">
-              <span class="subject-icon">{{ getSubjectIcon(subject.name) }}</span>
               {{ subject.name }}
             </div>
             <div class="table-col">{{ subject.tests }}</div>
@@ -162,7 +116,6 @@
               </div>
             </div>
             <div class="table-col best-score">{{ subject.bestScore }}%</div>
-            <div class="table-col">{{ subject.studyTime }} ч</div>
           </div>
         </div>
       </div>
@@ -175,6 +128,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import HeaderEnter from '@/components/HeaderEnter.vue'
+import axios from 'axios'
 
 export default {
   name: 'ProfileStats',
@@ -187,10 +141,8 @@ export default {
     const router = useRouter()
     
     // Refs для графиков
-    const progressChart = ref(null)
     const subjectsChart = ref(null)
     const accuracyChart = ref(null)
-    const activityChart = ref(null)
     
     // Ссылки на объекты Chart для очистки
     const chartInstances = ref([])
@@ -206,7 +158,6 @@ export default {
     const pvpBattles = ref(181)
     
     // Данные для диаграмм
-    const monthlyData = ref([65, 59, 80, 81, 56, 55, 70, 82, 78, 85, 90, 88])
     const subjectsData = ref({
       labels: ['Математика', 'Информатика', 'Физика', 'Английский язык', 'Химия', 'Биология', 'Физкультура', 'Русский язык'],
       data: [92, 89, 87, 85, 83, 81, 88, 86]
@@ -218,52 +169,51 @@ export default {
       { name: 'Гуманитарные', value: 78, count: 25, color: '#FFD166' },
       { name: 'Технические', value: 88, count: 18, color: '#EF476F' }
     ])
-    const activityData = ref([12, 19, 8, 15, 22, 18, 14]) // Пн-Вс
     
-    // Детальная статистика по предметам - ДОБАВЛЕНЫ ВСЕ ПРЕДМЕТЫ
+    // Детальная статистика по предметам - УДАЛЕНЫ ВСЕ studyTime
     const detailedSubjects = ref([
       // Математика
-      { name: 'Математика', tests: 25, avgScore: 95, bestScore: 100, studyTime: 45 },
-      { name: 'Геометрия', tests: 15, avgScore: 85, bestScore: 96, studyTime: 42 },
-      { name: 'Дискретная математика', tests: 12, avgScore: 78, bestScore: 90, studyTime: 38 },
+      { name: 'Математика', tests: 25, avgScore: 95, bestScore: 100 },
+      { name: 'Геометрия', tests: 15, avgScore: 85, bestScore: 96 },
+      { name: 'Дискретная математика', tests: 12, avgScore: 78, bestScore: 90 },
       
       // Естественные науки
-      { name: 'Физика', tests: 22, avgScore: 87, bestScore: 98, studyTime: 55 },
-      { name: 'Химия', tests: 18, avgScore: 83, bestScore: 95, studyTime: 48 },
-      { name: 'Биология', tests: 20, avgScore: 81, bestScore: 94, studyTime: 52 },
-      { name: 'Экология', tests: 10, avgScore: 75, bestScore: 88, studyTime: 32 },
-      { name: 'География', tests: 14, avgScore: 77, bestScore: 92, studyTime: 40 },
-      { name: 'Астрономия', tests: 8, avgScore: 72, bestScore: 85, studyTime: 28 },
+      { name: 'Физика', tests: 22, avgScore: 87, bestScore: 98 },
+      { name: 'Химия', tests: 18, avgScore: 83, bestScore: 95 },
+      { name: 'Биология', tests: 20, avgScore: 81, bestScore: 94 },
+      { name: 'Экология', tests: 10, avgScore: 75, bestScore: 88 },
+      { name: 'География', tests: 14, avgScore: 77, bestScore: 92 },
+      { name: 'Астрономия', tests: 8, avgScore: 72, bestScore: 85 },
       
       // Языки
-      { name: 'Русский язык', tests: 25, avgScore: 88, bestScore: 97, studyTime: 60 },
-      { name: 'Английский язык', tests: 30, avgScore: 85, bestScore: 99, studyTime: 70 },
-      { name: 'Немецкий язык', tests: 12, avgScore: 76, bestScore: 89, studyTime: 35 },
-      { name: 'Французский язык', tests: 10, avgScore: 74, bestScore: 87, studyTime: 32 },
-      { name: 'Китайский язык', tests: 8, avgScore: 68, bestScore: 82, studyTime: 45 },
-      { name: 'Испанский язык', tests: 9, avgScore: 71, bestScore: 85, studyTime: 30 },
-      { name: 'Латинский язык', tests: 5, avgScore: 65, bestScore: 80, studyTime: 25 },
+      { name: 'Русский язык', tests: 25, avgScore: 88, bestScore: 97 },
+      { name: 'Английский язык', tests: 30, avgScore: 85, bestScore: 99 },
+      { name: 'Немецкий язык', tests: 12, avgScore: 76, bestScore: 89 },
+      { name: 'Французский язык', tests: 10, avgScore: 74, bestScore: 87 },
+      { name: 'Китайский язык', tests: 8, avgScore: 68, bestScore: 82 },
+      { name: 'Испанский язык', tests: 9, avgScore: 71, bestScore: 85 },
+      { name: 'Латинский язык', tests: 5, avgScore: 65, bestScore: 80 },
       
       // Гуманитарные науки
-      { name: 'Литература', tests: 18, avgScore: 82, bestScore: 95, studyTime: 45 },
-      { name: 'История', tests: 16, avgScore: 79, bestScore: 93, studyTime: 42 },
-      { name: 'Обществознание', tests: 14, avgScore: 76, bestScore: 90, studyTime: 38 },
-      { name: 'Право', tests: 10, avgScore: 73, bestScore: 87, studyTime: 32 },
+      { name: 'Литература', tests: 18, avgScore: 82, bestScore: 95 },
+      { name: 'История', tests: 16, avgScore: 79, bestScore: 93 },
+      { name: 'Обществознание', tests: 14, avgScore: 76, bestScore: 90 },
+      { name: 'Право', tests: 10, avgScore: 73, bestScore: 87 },
       
       // Экономика
-      { name: 'Экономика', tests: 15, avgScore: 75, bestScore: 92, studyTime: 40 },
-      { name: 'Финансовая грамотность', tests: 12, avgScore: 80, bestScore: 95, studyTime: 35 },
+      { name: 'Экономика', tests: 15, avgScore: 75, bestScore: 92 },
+      { name: 'Финансовая грамотность', tests: 12, avgScore: 80, bestScore: 95 },
       
       // Технические науки
-      { name: 'Информатика', tests: 24, avgScore: 91, bestScore: 98, studyTime: 58 },
-      { name: 'Робототехника', tests: 10, avgScore: 84, bestScore: 96, studyTime: 45 },
-      { name: 'Искусственный интеллект', tests: 8, avgScore: 86, bestScore: 97, studyTime: 50 },
-      { name: 'Технология', tests: 12, avgScore: 78, bestScore: 91, studyTime: 38 },
+      { name: 'Информатика', tests: 24, avgScore: 91, bestScore: 98 },
+      { name: 'Робототехника', tests: 10, avgScore: 84, bestScore: 96 },
+      { name: 'Искусственный интеллект', tests: 8, avgScore: 86, bestScore: 97 },
+      { name: 'Технология', tests: 12, avgScore: 78, bestScore: 91 },
       
       // Искусство и спорт
-      { name: 'Искусство (МХК)', tests: 10, avgScore: 82, bestScore: 94, studyTime: 30 },
-      { name: 'Физкультура', tests: 15, avgScore: 88, bestScore: 99, studyTime: 40 },
-      { name: 'ОБЖ', tests: 8, avgScore: 85, bestScore: 96, studyTime: 25 }
+      { name: 'Искусство (МХК)', tests: 10, avgScore: 82, bestScore: 94 },
+      { name: 'Физкультура', tests: 15, avgScore: 88, bestScore: 99 },
+      { name: 'ОБЖ', tests: 8, avgScore: 85, bestScore: 96 }
     ])
     
     // Вычисляемые свойства
@@ -284,78 +234,12 @@ export default {
       return userData.value?.username?.charAt(0)?.toUpperCase() || '?'
     })
     
-    const bestMonth = computed(() => {
-      const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
-                     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
-      const maxIndex = monthlyData.value.indexOf(Math.max(...monthlyData.value))
-      return months[maxIndex]
-    })
-    
-    const yearlyGrowth = computed(() => {
-      const first = monthlyData.value[0]
-      const last = monthlyData.value[monthlyData.value.length - 1]
-      return Math.round(((last - first) / first) * 100)
-    })
-    
     const bestSubject = computed(() => {
       const maxIndex = subjectsData.value.data.indexOf(Math.max(...subjectsData.value.data))
       return subjectsData.value.labels[maxIndex]
     })
     
     const subjectsCount = computed(() => detailedSubjects.value.length)
-    
-    const mostActiveDay = computed(() => {
-      const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
-      const maxIndex = activityData.value.indexOf(Math.max(...activityData.value))
-      return days[maxIndex]
-    })
-    
-    const totalSessions = computed(() => activityData.value.reduce((a, b) => a + b, 0))
-    
-    // Методы
-    const getSubjectIcon = (subjectName) => {
-      const icons = {
-        'Математика': '🧮',
-        'Геометрия': '📐',
-        'Дискретная математика': '🔢',
-        'Физика': '⚛️',
-        'Химия': '🧪',
-        'Биология': '🧬',
-        'Экология': '🌿',
-        'География': '🌍',
-        'Астрономия': '🌌',
-        'Русский язык': '🇷🇺',
-        'Английский язык': '🇬🇧',
-        'Немецкий язык': '🇩🇪',
-        'Французский язык': '🇫🇷',
-        'Китайский язык': '🇨🇳',
-        'Испанский язык': '🇪🇸',
-        'Латинский язык': '🏛️',
-        'Литература': '📚',
-        'История': '📜',
-        'Обществознание': '👥',
-        'Право': '⚖️',
-        'Экономика': '💰',
-        'Финансовая грамотность': '💳',
-        'Информатика': '💻',
-        'Робототехника': '🤖',
-        'Искусственный интеллект': '🧠',
-        'Технология': '🔧',
-        'Искусство (МХК)': '🎨',
-        'Физкультура': '🏃',
-        'ОБЖ': '🛡️'
-      }
-      
-      // Ищем точное совпадение
-      if (icons[subjectName]) return icons[subjectName]
-      
-      // Ищем частичное совпадение
-      for (const [key, icon] of Object.entries(icons)) {
-        if (subjectName.includes(key)) return icon
-      }
-      
-      return '📘'
-    }
     
     const loadChartJS = () => {
       return new Promise((resolve, reject) => {
@@ -392,50 +276,7 @@ export default {
         })
         chartInstances.value = []
         
-        // 1. График успеваемости по месяцам (линейный)
-        if (progressChart.value) {
-          const progressCtx = progressChart.value.getContext('2d')
-          const progressInstance = new Chart(progressCtx, {
-            type: 'line',
-            data: {
-              labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
-              datasets: [{
-                label: 'Средний балл',
-                data: monthlyData.value,
-                borderColor: '#4A7B9D',
-                backgroundColor: 'rgba(74, 123, 157, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#224762',
-                pointRadius: 5,
-                pointHoverRadius: 8
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false }
-              },
-              scales: {
-                y: {
-                  beginAtZero: false,
-                  min: 50,
-                  max: 100,
-                  ticks: {
-                    callback: function(value) {
-                      return value + '%'
-                    }
-                  }
-                }
-              }
-            }
-          })
-          chartInstances.value.push(progressInstance)
-        }
-        
-        // 2. Распределение по предметам (столбчатая)
+        // 1. Распределение по предметам (столбчатая)
         if (subjectsChart.value) {
           const subjectsCtx = subjectsChart.value.getContext('2d')
           const subjectsInstance = new Chart(subjectsCtx, {
@@ -475,37 +316,7 @@ export default {
           chartInstances.value.push(subjectsInstance)
         }
         
-        // 3. Активность по дням недели (радар)
-        if (activityChart.value) {
-          const activityCtx = activityChart.value.getContext('2d')
-          const activityInstance = new Chart(activityCtx, {
-            type: 'radar',
-            data: {
-              labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-              datasets: [{
-                label: 'Тестов пройдено',
-                data: activityData.value,
-                backgroundColor: 'rgba(239, 71, 111, 0.2)',
-                borderColor: '#EF476F',
-                pointBackgroundColor: '#EF476F',
-                pointBorderColor: '#fff'
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                r: {
-                  beginAtZero: true,
-                  ticks: { display: false }
-                }
-              }
-            }
-          })
-          chartInstances.value.push(activityInstance)
-        }
-        
-        // 4. Точность по категориям (круговая)
+        // 2. Точность по категориям (круговая)
         if (accuracyChart.value) {
           const accuracyCtx = accuracyChart.value.getContext('2d')
           const accuracyInstance = new Chart(accuracyCtx, {
@@ -543,14 +354,6 @@ export default {
       }
     }
     
-    const exportStats = () => {
-      alert('Статистика успешно экспортирована!')
-    }
-    
-    const shareStats = () => {
-      alert('Функция поделиться будет реализована позже')
-    }
-    
     // Жизненный цикл
     onMounted(() => {
       // Загружаем данные пользователя (имитация)
@@ -569,35 +372,25 @@ export default {
     })
     
     return {
-      progressChart,
       subjectsChart,
       accuracyChart,
-      activityChart,
       userData,
       totalTests,
       correctRate,
       pvpBattles,
-      monthlyData,
       subjectsData,
       accuracyData,
-      activityData,
       detailedSubjects,
       avatarStyle,
       avatarLetter,
-      bestMonth,
-      yearlyGrowth,
       bestSubject,
-      subjectsCount,
-      mostActiveDay,
-      totalSessions,
-      getSubjectIcon,
+      subjectsCount
     }
   }
 }
 </script>
 
 <style scoped>
-/* Все стили остаются полностью прежними */
 .profile-stats-page {
   background: #FAF6EF;
   min-height: 100vh;
@@ -732,7 +525,7 @@ export default {
   border: 1px solid #E8E2D8;
   display: flex;
   flex-direction: column;
-  height: 420px; /* Фиксированная высота! */
+  height: 420px;
   min-height: 420px;
   overflow: hidden;
 }
@@ -754,7 +547,7 @@ export default {
   color: #4A7B9D;
 }
 
-/* Обертка для canvas - ФИКС ДЛЯ ГРАФИКОВ */
+/* Обертка для canvas */
 .chart-wrapper {
   flex: 1;
   min-height: 250px;
@@ -878,7 +671,7 @@ export default {
 .chart-fallback p {
   margin: 0;
   font-size: 14px;
-  color: #EF476F;
+  color: '#EF476F';
 }
 
 /* Детальная статистика */
@@ -892,7 +685,7 @@ export default {
 }
 
 .section-title {
-  color: #224762;
+  color: '#224762';
   font-size: 24px;
   margin-bottom: 25px;
   display: flex;
@@ -908,8 +701,8 @@ export default {
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  background: #224762;
+  grid-template-columns: 2fr 1fr 1fr 1fr; /* Изменено с 5 на 4 колонки */
+  background: '#224762';
   color: white;
   padding: 18px 20px;
   font-weight: 600;
@@ -918,7 +711,7 @@ export default {
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr; /* Изменено с 5 на 4 колонки */
   padding: 18px 20px;
   border-bottom: 1px solid #F0EBE2;
   align-items: center;
@@ -934,6 +727,7 @@ export default {
 }
 
 .table-col {
+  color: #000000;
   padding: 0 10px;
 }
 
@@ -943,10 +737,6 @@ export default {
   gap: 12px;
   font-weight: 600;
   color: #2C3E50;
-}
-
-.subject-icon {
-  font-size: 20px;
 }
 
 .score-bar {
@@ -981,47 +771,8 @@ export default {
 
 .best-score {
   font-weight: bold;
-  color: #06D6A0;
+  color: '#06D6A0';
   font-size: 18px;
-}
-
-/* Экспорт */
-.export-section {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  margin-top: 50px;
-}
-
-.export-btn {
-  background: linear-gradient(135deg, #4A7B9D 0%, #224762 100%);
-  color: white;
-  border: none;
-  padding: 18px 35px;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.3s ease;
-}
-
-.export-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 30px rgba(34, 71, 98, 0.25);
-}
-
-.export-btn.secondary {
-  background: white;
-  color: #224762;
-  border: 2px solid #E8E2D8;
-}
-
-.export-btn.secondary:hover {
-  background: #FAF6EF;
-  border-color: #4A7B9D;
 }
 
 /* Адаптивность */
@@ -1079,15 +830,6 @@ export default {
   .table-row {
     grid-template-columns: 1fr;
     gap: 10px;
-  }
-  
-  .export-section {
-    flex-direction: column;
-  }
-  
-  .export-btn {
-    width: 100%;
-    justify-content: center;
   }
 }
 
