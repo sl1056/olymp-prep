@@ -63,44 +63,206 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios';
 
 export default {
-  name: 'YourComponentName',
-  data() {
-    status: ''
-  },
-
-  async created() {
-    await this.fetchUserData();
-    await this.startStatusChecking();
-  },
-
-  beforeUnmount() {
-    // Очищаем интервал при уничтожении компонента
-    this.stopStatusChecking();
-  },
+  name: 'WaitingPage',
   
   setup() {
     const router = useRouter()
-
+    
+    // Реактивные данные
     const currentMatch = ref({
-      subject: localStorage.getItem('currentMatchSubject'),
-      difficulty: localStorage.getItem('currentMatchDifficulty'),
-      matchCode: localStorage.getItem('currentMatchId')
+      subject: localStorage.getItem('currentMatchSubject') || 'Не указан',
+      difficulty: localStorage.getItem('currentMatchDifficulty') || 'Средняя',
+      matchCode: localStorage.getItem('currentMatchId') || 'Нет кода'
+    })
+    
+    const userData = ref(null)
+    const socket = ref(null)
+    const checkInterval = ref(null)
+    const isLoading = ref(true)
+
+    // Computed
+    const invitationLink = computed(() => {
+      const baseUrl = window.location.origin
+      return `${baseUrl}/join/${currentMatch.value.matchCode}`
     })
 
-    const invitationLink = computed(() => {
-      return `ССЫЛКА`
-    })
+    // Методы
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Token ${token}`;
+          const response = await axios.get('http://localhost:8000/api/auth/profile/');
+          userData.value = response.data;
+          console.log('Данные пользователя:', userData.value);
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке данных пользователя:', err);
+        userData.value = null;
+      } finally {
+        isLoading.value = false;
+      }
+    }
+
+    const connectWebSocket = () => {
+      const token = localStorage.getItem('authToken');
+      const matchId = localStorage.getItem('currentMatchId');
+
+      console.log('=== WebSocket Debug ===');
+      console.log('Token:', token ? `Present (${token.substring(0, 10)}...)` : 'MISSING');
+      console.log('Match ID:', matchId || 'MISSING');
+
+      if (!token) {
+        console.error('ERROR: No auth token in localStorage');
+        alert('Ошибка авторизации. Пожалуйста, войдите снова.');
+        router.push('/login');
+        return;
+      }
+
+      if (!matchId) {
+        console.error('ERROR: No match ID in localStorage');
+        alert('Ошибка: ID матча не найден');
+        return;
+      }
+    
+      // Вариант 1: Без токена в URL (если токен передается в заголовках)
+      const wsUrl = `ws://localhost:8000/ws/pvp/${matchId}/?token=${token}`;
+
+      // Вариант 2: С токеном в query параметре
+      // const wsUrl = `ws://localhost:8000/ws/pvp/${matchId}/?token=${encodeURIComponent(token)}`;
+
+      console.log('WebSocket URL:', wsUrl);
+
+      try {
+        socket.value = new WebSocket(wsUrl);
+
+        // Добавляем таймаут для соединения
+        const connectionTimeout = setTimeout(() => {
+          if (socket.value && socket.value.readyState === WebSocket.CONNECTING) {
+            console.error('WebSocket connection timeout');
+            socket.value.close();
+            alert('Не удалось подключиться к серверу. Проверьте интернет соединение.');
+          }
+        }, 5000);
+
+        socket.value.onopen = () => {
+          console.log('✅ WebSocket успешно подключен');
+          clearTimeout(connectionTimeout);
+
+          // Отправляем сообщение с токеном после открытия соединения
+          const authMessage = {
+            type: 'authenticate',
+            token: token
+          };
+          socket.value.send(JSON.stringify(authMessage));
+          console.log('Отправлен запрос аутентификации');
+        };
+
+        socket.value.onmessage = (event) => {
+          console.log('📨 Получено сообщение:', event.data);
+
+          try {
+            const data = JSON.parse(event.data);
+            console.log('Parsed data:', data);
+
+            if (data.type === 'player_joined') {
+              console.log('🎮 Игрок присоединился! Переход на страницу ответов...');
+              router.push('/PvP/answer');
+            } else if (data.type === 'auth_success') {
+              console.log('✅ Аутентификация успешна');
+            } else if (data.type === 'auth_error') {
+              console.error('❌ Ошибка аутентификации:', data.message);
+              alert('Ошибка авторизации: ' + data.message);
+            } else if (data.type === 'error') {
+              console.error('❌ Ошибка WebSocket:', data.message);
+            }
+          } catch (error) {
+            console.error('Ошибка парсинга JSON:', error, 'Raw:', event.data);
+          }
+        };
+
+        socket.value.onerror = (error) => {
+          console.error('❌ WebSocket error event:', error);
+          console.error('WebSocket readyState:', socket.value?.readyState);
+          clearTimeout(connectionTimeout);
+
+          // Проверяем конкретные ошибки
+          if (error && error.target && error.target.readyState === WebSocket.CLOSED) {
+            console.error('Соединение было закрыто до установки');
+          }
+        };
+
+        socket.value.onclose = (event) => {
+          console.log('🔌 WebSocket закрыт:', {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean
+          });
+          clearTimeout(connectionTimeout);
+
+          if (!event.wasClean) {
+            console.error('Соединение разорвано неестественно');
+            // Пытаемся переподключиться через 3 секунды
+            setTimeout(() => {
+              console.log('Попытка переподключения...');
+              connectWebSocket();
+            }, 3000);
+          }
+        };
+
+      } catch (error) {
+        console.error('Исключение при создании WebSocket:', error);
+      }
+    }
+
+    const checkStatus = async () => {
+      try {
+        const matchCode = currentMatch.value?.matchCode;
+        if (!matchCode || matchCode === 'Нет кода') {
+          console.error('Match code not found');
+          return;
+        }
+        
+        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchCode}`);
+        console.log('Current status:', response.data);
+        
+        if (response.data.status === 'active') {
+          stopStatusChecking();
+          router.push(`/PvP/answer`);
+        }
+      } catch (err) {
+        console.error('Error checking match status:', err);
+      }
+    }
+
+    const startStatusChecking = () => {
+      // Вызываем сразу один раз
+      checkStatus();
+      
+      // Затем устанавливаем интервал
+      checkInterval.value = setInterval(() => {
+        checkStatus();
+      }, 1000);
+    }
+
+    const stopStatusChecking = () => {
+      if (checkInterval.value) {
+        clearInterval(checkInterval.value);
+        checkInterval.value = null;
+      }
+    }
 
     const handleCopyLink = async () => {
       const linkText = invitationLink.value
       
       try {
         await navigator.clipboard.writeText(linkText)
+        alert('Ссылка скопирована!')
       } catch {
         const tempInput = document.createElement('input')
         tempInput.value = linkText
@@ -108,6 +270,7 @@ export default {
         tempInput.select()
         document.execCommand('copy')
         document.body.removeChild(tempInput)
+        alert('Ссылка скопирована в буфер!')
       }
     }
 
@@ -115,117 +278,45 @@ export default {
       const userConfirmed = confirm('Вы уверены, что хотите отменить матч?')
       
       if (userConfirmed) {
+        // Закрываем WebSocket если открыт
+        if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+          socket.value.close(1000, 'User cancelled match');
+        }
+        
+        stopStatusChecking();
         router.push('/')
       }
     }
 
+    // Хуки жизненного цикла
+    onMounted(async () => {
+      console.log('Компонент монтирован');
+      console.log('Match ID из localStorage:', localStorage.getItem('currentMatchId'));
+      
+      await fetchUserData();
+      startStatusChecking();
+      connectWebSocket();
+    })
+
+    onUnmounted(() => {
+      // Очистка при размонтировании
+      if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+        socket.value.close(1000, 'Component unmounted');
+      }
+      
+      stopStatusChecking();
+    })
+
+    // Возвращаем всё что нужно в шаблоне
     return {
       currentMatch,
       invitationLink,
       handleCopyLink,
-      handleCancelMatch
+      handleCancelMatch,
+      isLoading
     }
-  },
-
-  methods: {
-
-    async fetchUserData() {
-      try {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          axios.defaults.headers.common['Authorization'] = `Token ${token}`;
-          const response = await axios.get('http://localhost:8000/api/auth/profile/');
-          this.userData = response.data;
-        }
-      } catch (err) {
-        console.error('Ошибка при загрузке данных пользователя:', err);
-        this.userData = null;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    async checkStatus() {
-      try {
-        // Используем currentMatch.matchCode из ref
-        const matchCode = this.currentMatch?.matchCode;
-        if (!matchCode) {
-          console.error('Match code not found');
-          return;
-        }
-        
-        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchCode}`);
-        this.status = response.data.status;
-        console.log('Current status:', response.data);
-        
-        // Если статус показывает, что матч готов, можно перенаправить
-        if (response.data.status === 'active') {
-          this.stopStatusChecking();
-          this.$router.push(`/PvP/answer`);
-        }
-      } catch (err) {
-        console.error('Error checking match status:', err);
-      }
-    },
-
-    startStatusChecking() {
-      // Вызываем сразу один раз
-      this.checkStatus();
-      
-      // Затем устанавливаем интервал на каждую секунду
-      this.checkInterval = setInterval(() => {
-        this.checkStatus();
-      }, 1000);
-    },
-
-    stopStatusChecking() {
-      if (this.checkInterval) {
-        clearInterval(this.checkInterval);
-        this.checkInterval = null;
-      }
-    },
-
-    handleWebSocketMessage(data) {
-      console.log('Получено сообщение:', data);
-      
-      switch (data.type) {
-        case 'match_ready':
-          // Матч готов к началу (оба игрока подключились)
-          this.showWaitingModal = false;
-          this.$router.push(`/pvp/match/${this.matchId}`);
-          break;
-          
-        case 'player_joined':
-          // В матч присоединился игрок (для хоста)
-          alert(`Игрок ${data.username} присоединился к матчу!`);
-          break;
-          
-        case 'match_cancelled':
-          // Матч отменен
-          this.showWaitingModal = false;
-          alert('Матч был отменен создателем');
-          break;
-          
-        case 'error':
-          alert(`Ошибка: ${data.message}`);
-          break;
-      }
-    },
-
-    cancelMatch() {
-      if (this.ws) {
-        const message = {
-          type: 'cancel_match'
-        };
-        this.ws.send(JSON.stringify(message));
-      }
-      this.showWaitingModal = false;
-      this.matchId = null;
-      this.matchCode = '';
-    },
   }
 }
-
 </script>
 
 <style scoped>

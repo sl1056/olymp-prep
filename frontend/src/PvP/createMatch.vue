@@ -301,9 +301,6 @@ export default {
         localStorage.setItem('currentMatchSubject', this.currentSubject);
         localStorage.setItem('matchRole', 'host');
         
-        // 2. Подключаем WebSocket для матча
-        this.connectWebSocket('host');
-        
         // 3. Переходим на страницу ожидания
         await this.$router.push('/PvP/create/wait');
         
@@ -319,32 +316,6 @@ export default {
         this.creatingMatch = false;
       }
     },
-
-    connectWebSocket(role) {
-    const token = localStorage.getItem('authToken');
-    // Добавляем токен как параметр запроса
-    const wsUrl = `ws://localhost:8000/ws/pvp/${this.matchId}/?token=${token}`;
-
-    this.socket = new WebSocket(wsUrl);
-    
-    this.socket.onopen = () => {
-        console.log('WebSocket соединение установлено');
-    };
-
-    this.socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        this.handleWebSocketMessage(data);
-    };
-
-    this.socket.onerror = (error) => {
-        console.error('WebSocket ошибка:', error);
-    };
-
-    this.socket.onclose = (event) => {
-        console.log('WebSocket соединение закрыто', event.code, event.reason);
-    };
-},
-
     
     // Заглушка для API
     fakeApiCall() {
