@@ -109,7 +109,7 @@
               
               <div class="summary-stat">
                 <div class="summary-icon">
-                  <i class="fas fa-books"></i>
+                  <i class="fa-solid fa-book"></i>
                 </div>
                 <div class="summary-content">
                   <div class="summary-value">{{ chartData.length }}</div>

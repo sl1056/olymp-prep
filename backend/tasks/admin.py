@@ -1,11 +1,16 @@
+# tasks/admin.py
 from django.contrib import admin
+from import_export.admin import ImportExportModelAdmin  # ← импорт
 from .models import Task
+from .resources import TaskResource
+
+
 @admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
+class TaskAdmin(ImportExportModelAdmin):
+    resource_class = TaskResource
+
     list_display = ('id', 'subject', 'topic', 'difficulty')
-
     list_filter = ('subject', 'topic', 'difficulty')
-
     search_fields = ('text', 'topic', 'subject')
 
     fields = (
@@ -16,5 +21,4 @@ class TaskAdmin(admin.ModelAdmin):
         'correct_answer',
         'hints'
     )
-    # readonly_fields = ()
     ordering = ('-id',)
