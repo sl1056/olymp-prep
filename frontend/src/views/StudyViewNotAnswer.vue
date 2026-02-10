@@ -61,20 +61,92 @@
 
       <main class="main-content">
         <div class="content-header">
-          <div class="subject-info">
-            <h1>{{ getCurrentSubjectName() }}</h1>
+          <div class="subject-header">
+            <button class="back-button" @click="goBack">
+              <span class="back-arrow">←</span>
+              <span class="back-text">Назад</span>
+            </button>
+            
+            <div class="subject-info">
+              <h1>{{ getCurrentSubjectName() }}</h1>
+            </div>
           </div>
           
           <div class="search-tool">
             <div class="search-label">ПОИСК ПО НОМЕРУ</div>
             <div class="search-box">
-              <input type="number" placeholder="№ задания">
-              <button @click="findTask">ПЕРЕЙТИ</button>
+              <input 
+                type="number" 
+                v-model="searchTaskNumber" 
+                placeholder="№ задания"
+                @keyup.enter="findTask"
+                :disabled="isSearching"
+              >
+              <button @click="findTask" :disabled="isSearching || !searchTaskNumber">
+                {{ isSearching ? 'ПОИСК...' : 'ПЕРЕЙТИ' }}
+              </button>
+            </div>
+            <div v-if="searchError" class="search-error">
+              {{ searchError }}
             </div>
           </div>
         </div>
 
-        <div class="task-container">
+        <!-- Режим поиска - просто показываем найденное задание -->
+        <div v-if="isSearchMode && searchResult" class="search-result-section">
+          <div class="section-title">
+            <h2>Найденное задание №{{ searchResult.id }}</h2>
+            <button class="clear-search-btn" @click="clearSearch">
+              × Сбросить поиск
+            </button>
+          </div>
+          
+          <div class="task-block">
+            <div class="task-head">
+              <div class="task-title">
+                <span class="task-id">№{{ searchResult.id }}</span>
+                <span :class="['difficulty-mark', searchResult.difficulty]">
+                  {{ formatDifficulty(searchResult.difficulty) }}
+                </span>
+              </div>
+              <span class="task-category">{{ searchResult.topic }}</span>
+            </div>
+            
+            <div class="task-description">
+              {{ searchResult.text }}
+            </div>
+            
+            <div class="answer-section">
+              <div 
+                class="toggle-answer" 
+                @click="toggleAnswerVisibility(searchResult.id)"
+              >
+                {{ answerVisible[searchResult.id] ? 'Свернуть ответ ▲' : 'Показать ответ ▼' }}
+              </div>
+              
+              <div v-if="answerVisible[searchResult.id]" class="answer-block">
+                <div class="answer-label">Ответ:</div>
+                <div class="answer-value">{{ searchResult.answer }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Если поиск не дал результатов -->
+        <div v-else-if="isSearchMode && !searchResult && !isSearching" class="no-search-results">
+          <div class="section-title">
+            <h2>Результаты поиска</h2>
+            <button @click="clearSearch" class="clear-search-btn">
+              × Сбросить поиск
+            </button>
+          </div>
+          <div class="no-results-message">
+            <p>Задание с номером {{ searchTaskNumber }} не найдено</p>
+          </div>
+        </div>
+
+        <!-- Обычный режим (список заданий) -->
+        <div v-else class="task-container">
           <div class="task-list">
             <div v-if="tasksOnPage.length > 0">
               <div 
@@ -85,7 +157,9 @@
                 <div class="task-head">
                   <div class="task-title">
                     <span class="task-id">№{{ item.id }}</span>
-                    <span :class="['difficulty-mark', item.difficulty]">{{ formatDifficulty(item.difficulty) }}</span>
+                    <span :class="['difficulty-mark', item.difficulty]">
+                      {{ formatDifficulty(item.difficulty) }}
+                    </span>
                   </div>
                   <span class="task-category">{{ item.topic }}</span>
                 </div>
@@ -110,49 +184,43 @@
               </div>
             </div>
             
-            <div v-else class="empty-list">
+            <div v-else-if="!isSearching" class="empty-list">
               <p>Нет заданий, соответствующих выбранным фильтрам</p>
             </div>
           </div>
-        </div>
 
-        <div class="page-controls">
-          <button 
-            class="nav-btn prev" 
-            :disabled="currentPageNumber === 1"
-            @click="goToPrevPage"
-          >
-            ← Назад
-          </button>
-          
-          <div class="page-indicators">
-            <span 
-              v-for="page in totalPageCount" 
-              :key="page"
-              class="page-indicator"
-              :class="{ active: page === currentPageNumber }"
-              @click="selectPage(page)"
+          <!-- Пагинация только в обычном режиме -->
+          <div v-if="!isSearchMode && tasksOnPage.length > 0" class="page-controls">
+            <button 
+              class="nav-btn prev" 
+              :disabled="currentPageNumber === 1"
+              @click="goToPrevPage"
             >
-              {{ page }}
-            </span>
+              ← Назад
+            </button>
+            
+            <div class="page-indicators">
+              <span 
+                v-for="page in totalPageCount" 
+                :key="page"
+                class="page-indicator"
+                :class="{ active: page === currentPageNumber }"
+                @click="selectPage(page)"
+              >
+                {{ page }}
+              </span>
+            </div>
+            
+            <button 
+              class="nav-btn next" 
+              :disabled="currentPageNumber === totalPageCount"
+              @click="goToNextPage"
+            >
+              Вперед →
+            </button>
           </div>
-          
-          <button 
-            class="nav-btn next" 
-            :disabled="currentPageNumber === totalPageCount"
-            @click="goToNextPage"
-          >
-            Вперед →
-          </button>
         </div>
       </main>
-
-      <button class="main-page-btn" @click="returnHome">
-        <svg class="home-symbol" viewBox="0 0 24 24">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-        <span>На главную</span>
-      </button>
     </div>
   </div>
 </template>
@@ -172,7 +240,14 @@ export default {
       answerVisible: {},
       taskCollection: [],
       loading: false,
-      fetchError: null
+      fetchError: null,
+      
+      // Поисковые переменные
+      searchTaskNumber: '',
+      searchResult: null,
+      searchError: '',
+      isSearching: false,
+      isSearchMode: false
     }
   },
   
@@ -234,6 +309,8 @@ export default {
     },
     
     tasksOnPage() {
+      if (this.isSearchMode) return [];
+      
       const perPage = 2;
       const start = (this.currentPageNumber - 1) * perPage;
       const end = start + perPage;
@@ -242,8 +319,27 @@ export default {
     },
     
     totalPageCount() {
+      if (this.isSearchMode) return 0;
+      
       const perPage = 2;
       return Math.ceil(this.filteredTasks.length / perPage) || 1;
+    }
+  },
+  
+  watch: {
+    currentSubject() {
+      this.clearSearch();
+      this.currentPageNumber = 1;
+    },
+    
+    selectedDifficulties() {
+      this.clearSearch();
+      this.currentPageNumber = 1;
+    },
+    
+    sortMethod() {
+      this.clearSearch();
+      this.currentPageNumber = 1;
     }
   },
   
@@ -252,10 +348,6 @@ export default {
   },
   
   methods: {
-    returnHome() {
-      this.$router.push('/');
-    },
-    
     async loadTasks() {
       this.loading = true;
       this.fetchError = null;
@@ -274,9 +366,8 @@ export default {
         }
       } catch (err) {
         console.error('Ошибка при загрузке заданий:', err);
-        this.$router.push('/auth');
-        this.error = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
-        this.allTasks = this.getMockTasks();
+        this.fetchError = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
+        this.taskCollection = [];
       } finally {
         this.loading = false;
       }
@@ -296,24 +387,72 @@ export default {
       return subject ? subject.name : 'МАТЕМАТИКА';
     },
     
-    findTask() {
-      alert('Поиск задания');
+    async findTask() {
+      if (!this.searchTaskNumber) {
+        this.searchError = 'Введите номер задания';
+        return;
+      }
+      
+      const taskNumber = parseInt(this.searchTaskNumber);
+      if (isNaN(taskNumber) || taskNumber <= 0) {
+        this.searchError = 'Введите корректный номер задания';
+        return;
+      }
+      
+      this.isSearching = true;
+      this.searchError = '';
+      this.isSearchMode = true;
+      
+      // Ищем в загруженных заданиях
+      const foundTask = this.taskCollection.find(task => task.id === taskNumber);
+      
+      if (foundTask) {
+        this.searchResult = foundTask;
+      } else {
+        this.searchResult = null;
+        this.searchError = `Задание с номером ${taskNumber} не найдено`;
+      }
+      
+      this.isSearching = false;
+    },
+    
+    clearSearch() {
+      this.searchTaskNumber = '';
+      this.searchResult = null;
+      this.searchError = '';
+      this.isSearchMode = false;
+      this.currentPageNumber = 1;
+    },
+    
+    goBack() {
+      if (window.history.length > 1) {
+        this.$router.go(-1);
+      } else {
+        this.$router.push('/');
+      }
     },
     
     goToPrevPage() {
       if (this.currentPageNumber > 1) {
         this.currentPageNumber--;
+        this.scrollToTop();
       }
     },
     
     goToNextPage() {
       if (this.currentPageNumber < this.totalPageCount) {
         this.currentPageNumber++;
+        this.scrollToTop();
       }
     },
     
     selectPage(page) {
       this.currentPageNumber = page;
+      this.scrollToTop();
+    },
+    
+    scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     
     toggleAnswerVisibility(taskId) {
@@ -328,14 +467,7 @@ export default {
       const tasksCopy = [...tasks];
       
       if (this.sortMethod === 'number') {
-        return tasksCopy.sort((a, b) => {
-          const getNum = (str) => {
-            const match = str ? str.toString().match(/\d+/g) : null;
-            return match ? parseInt(match[0]) : 0;
-          };
-          
-          return getNum(a.number) - getNum(b.number);
-        });
+        return tasksCopy.sort((a, b) => a.id - b.id);
       } 
       
       if (this.sortMethod === 'difficulty') {
@@ -348,12 +480,7 @@ export default {
             return diffA - diffB;
           }
           
-          const getNum = (str) => {
-            const match = str ? str.toString().match(/\d+/g) : null;
-            return match ? parseInt(match[0]) : 0;
-          };
-          
-          return getNum(a.number) - getNum(b.number);
+          return a.id - b.id;
         });
       } 
       
@@ -367,12 +494,7 @@ export default {
             return compare;
           }
           
-          const getNum = (str) => {
-            const match = str ? str.toString().match(/\d+/g) : null;
-            return match ? parseInt(match[0]) : 0;
-          };
-          
-          return getNum(a.number) - getNum(b.number);
+          return a.id - b.id;
         });
       }
       
@@ -402,13 +524,10 @@ export default {
   height: 100vh;
   position: sticky;
   top: 0;
-  /* Оставляем скролл, но делаем его невидимым */
   overflow-y: auto;
-  /* Убираем стандартный скроллбар во всех браузерах */
-  scrollbar-width: none; /* Для Firefox */
+  scrollbar-width: none;
 }
 
-/* Скрываем скроллбар в Webkit-браузерах (Chrome, Safari, Edge) */
 .navigation-panel::-webkit-scrollbar {
   display: none;
   width: 0;
@@ -488,12 +607,10 @@ export default {
 .subject-list {
   padding: 15px;
   max-height: calc(100vh - 380px);
-  /* Убираем скроллбар в списке предметов */
   overflow-y: auto;
-  scrollbar-width: none; /* Для Firefox */
+  scrollbar-width: none;
 }
 
-/* Скрываем скроллбар в списке предметов */
 .subject-list::-webkit-scrollbar {
   display: none;
   width: 0;
@@ -545,6 +662,44 @@ export default {
   border-radius: 15px;
 }
 
+.subject-header {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px 10px 15px;
+  background: transparent;
+  border: 2px solid #1E88E5;
+  border-radius: 8px;
+  color: #1E88E5;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.back-button:hover {
+  background: #1E88E5;
+  color: #FFF;
+  transform: translateX(-5px);
+  box-shadow: 0 4px 12px rgba(30,136,229,0.3);
+}
+
+.back-arrow {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.back-text {
+  letter-spacing: 0.5px;
+}
+
 .subject-info h1 {
   color: #000;
   font-size: 32px;
@@ -572,6 +727,13 @@ export default {
   font-size: 16px;
 }
 
+.search-error {
+  color: #E53935;
+  font-size: 14px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
 .search-box {
   display: flex;
   gap: 12px;
@@ -594,6 +756,12 @@ export default {
   box-shadow: 0 0 0 3px rgba(30,136,229,0.2);
 }
 
+.search-box input:disabled {
+  background: #F5F7FA;
+  border-color: #CFD8DC;
+  cursor: not-allowed;
+}
+
 .search-box button {
   padding: 16px 28px;
   background: linear-gradient(135deg, #1E88E5, #1565C0);
@@ -604,11 +772,82 @@ export default {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 120px;
 }
 
-.search-box button:hover {
+.search-box button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(30,136,229,0.4);
+}
+
+.search-box button:disabled {
+  background: linear-gradient(135deg, #B0BEC5, #90A4AE);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Общие стили для секций */
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding: 20px 25px;
+  background: #FFF;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.section-title h2 {
+  color: #000;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.clear-search-btn {
+  padding: 10px 20px;
+  background: #FF5252;
+  color: #FFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-search-btn:hover {
+  background: #E53935;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(229,57,53,0.3);
+}
+
+/* Стили для найденного задания */
+.search-result-section {
+  margin-bottom: 40px;
+  animation: fadeIn 0.5s ease;
+}
+
+/* Стили для отсутствия результатов поиска */
+.no-search-results {
+  margin-bottom: 40px;
+  animation: fadeIn 0.5s ease;
+}
+
+.no-results-message {
+  text-align: center;
+  padding: 60px;
+  background: #FFF;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.no-results-message p {
+  font-size: 18px;
+  color: #E53935;
+  font-weight: 500;
+  margin-bottom: 20px;
 }
 
 .task-list {
@@ -844,47 +1083,6 @@ export default {
   box-shadow: 0 6px 16px rgba(30,136,229,0.3);
 }
 
-.main-page-btn {
-  font-family: "Alexandria", sans-serif;
-  background: #224762;
-  color: white;
-  border: none;
-  padding: 14px 35px 14px 25px;
-  border-radius: 50px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 6px 20px rgba(34,71,98,0.25);
-  letter-spacing: 0.8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 2px solid rgba(255,255,255,0.1);
-  position: absolute;
-  top: 20px;
-  right: 45px;
-  min-width: 180px;
-}
-
-.home-symbol {
-  width: 22px;
-  height: 22px;
-  fill: white;
-  transition: transform 0.2s;
-  flex-shrink: 0;
-}
-
-.main-page-btn:hover {
-  background: #1B3A50;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(34,71,98,0.35);
-}
-
-.main-page-btn:active {
-  transform: translateY(0);
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -905,7 +1103,6 @@ export default {
     width: 100%;
     height: auto;
     position: static;
-    /* На мобильных тоже скрываем скроллбар */
     scrollbar-width: none;
   }
   
@@ -924,21 +1121,12 @@ export default {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 10px;
-    /* Убираем overflow-y на мобильных, так как используется grid */
     overflow-y: visible;
   }
   
   .filter-block,
   .sort-block {
     margin: 10px;
-  }
-  
-  .main-page-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    min-width: 160px;
-    padding: 12px 25px 12px 20px;
   }
 }
 
@@ -948,8 +1136,22 @@ export default {
     gap: 25px;
   }
   
+  .subject-header {
+    width: 100%;
+  }
+  
   .search-tool {
     width: 100%;
+  }
+  
+  .section-title {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .section-title h2 {
+    font-size: 20px;
   }
   
   .task-head {
@@ -966,54 +1168,29 @@ export default {
   .page-indicators {
     order: -1;
   }
-  
-  .main-page-btn {
-    top: 15px;
-    right: 15px;
-    padding: 12px 20px 12px 16px;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-    gap: 8px;
-    border-radius: 40px;
-    box-shadow: 0 4px 15px rgba(34,71,98,0.25);
-    min-width: auto;
-  }
-  
-  .home-symbol {
-    width: 18px;
-    height: 18px;
-  }
 }
 
 @media (max-width: 480px) {
-  .main-page-btn {
-    top: 10px;
-    right: 10px;
-    padding: 10px 16px 10px 12px;
-    font-size: 12px;
-    gap: 6px;
+  .back-button {
+    padding: 8px 15px 8px 10px;
+    font-size: 14px;
   }
   
-  .home-symbol {
-    width: 16px;
-    height: 16px;
+  .back-arrow {
+    font-size: 16px;
   }
   
-  .main-page-btn span {
-    display: none;
+  .subject-info h1 {
+    font-size: 26px;
   }
   
-  .main-page-btn {
-    width: 50px;
-    height: 50px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
+  .search-box {
+    flex-direction: column;
   }
   
-  .home-symbol {
-    width: 22px;
-    height: 22px;
+  .search-box input,
+  .search-box button {
+    width: 100%;
   }
 }
 </style>
