@@ -371,37 +371,62 @@ export default {
     },
     
     sortTasks(tasks) {
-      if (this.sortBy === 'number') {
-        return [...tasks].sort((a, b) => {
-          const numA = parseInt(a.number.match(/\d+/)[0]);
-          const numB = parseInt(b.number.match(/\d+/)[0]);
-          return numA - numB;
+      if (!tasks || !Array.isArray(tasks)) {
+        return [];
+      }
+      
+      const tasksCopy = [...tasks];
+      
+      if (this.sortMethod === 'number') {
+        return tasksCopy.sort((a, b) => {
+          const getNum = (str) => {
+            const match = str ? str.toString().match(/\d+/g) : null;
+            return match ? parseInt(match[0]) : 0;
+          };
+          
+          return getNum(a.number) - getNum(b.number);
         });
-      } else if (this.sortBy === 'difficulty') {
-        const difficultyOrder = { easy: 1, medium: 2, hard: 3 };
-        return [...tasks].sort((a, b) => {
-          const diffA = difficultyOrder[a.difficulty];
-          const diffB = difficultyOrder[b.difficulty];
+      } 
+      
+      if (this.sortMethod === 'difficulty') {
+        const order = { easy: 1, medium: 2, hard: 3 };
+        return tasksCopy.sort((a, b) => {
+          const diffA = order[a.difficulty] || 2;
+          const diffB = order[b.difficulty] || 2;
           
           if (diffA !== diffB) {
             return diffA - diffB;
           }
-          const numA = parseInt(a.number.match(/\d+/)[0]);
-          const numB = parseInt(b.number.match(/\d+/)[0]);
-          return numA - numB;
+          
+          const getNum = (str) => {
+            const match = str ? str.toString().match(/\d+/g) : null;
+            return match ? parseInt(match[0]) : 0;
+          };
+          
+          return getNum(a.number) - getNum(b.number);
         });
-      } else if (this.sortBy === 'type') {
-        return [...tasks].sort((a, b) => {
-          const typeCompare = a.type.localeCompare(b.type);
-          if (typeCompare !== 0) {
-            return typeCompare;
+      } 
+      
+      if (this.sortMethod === 'type') {
+        return tasksCopy.sort((a, b) => {
+          const typeA = a.type || '';
+          const typeB = b.type || '';
+          const compare = typeA.localeCompare(typeB);
+          
+          if (compare !== 0) {
+            return compare;
           }
-          const numA = parseInt(a.number.match(/\d+/)[0]);
-          const numB = parseInt(b.number.match(/\d+/)[0]);
-          return numA - numB;
+          
+          const getNum = (str) => {
+            const match = str ? str.toString().match(/\d+/g) : null;
+            return match ? parseInt(match[0]) : 0;
+          };
+          
+          return getNum(a.number) - getNum(b.number);
         });
       }
-      return tasks;
+      
+      return tasksCopy;
     }
   }
 }

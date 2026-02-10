@@ -283,10 +283,13 @@ export default {
         const token = localStorage.getItem('authToken');
         const response = await axios.post(
           'http://localhost:8000/api/pvp/create/',
-          {},
+          {
+            subject: 'math',
+            difficulty: 'medium'
+          },
           {
             headers: {
-              'Authorization': `Token ${token}`,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           }
