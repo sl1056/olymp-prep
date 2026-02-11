@@ -112,13 +112,19 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                 }
             )
 
-
-
     @database_sync_to_async
     def check_participation(self, match_id, user_id):
         try:
             match = Match.objects.get(id=match_id)
-            return match.player1_id == user_id or match.player2_id == user_id
+            if match.player1_id == user_id:
+                return True
+
+            if match.player2_id == user_id:
+                return True
+            if not match.player2_id:
+                return True
+
+            return False
         except Match.DoesNotExist:
             return False
 
