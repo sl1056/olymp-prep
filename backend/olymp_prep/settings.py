@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'channels',
     'pvp.apps.PvpConfig',
     'analytics.apps.AnalyticsConfig',
-
+    'training.apps.TrainingConfig'
 ]
 
 REST_FRAMEWORK = {

@@ -1,4 +1,3 @@
-from django.shortcuts import render
 import random
 
 # Create your views here.
@@ -13,28 +12,22 @@ from analytics.models import TaskAttempt
 from tasks.models import Task
 
 from .models import TrainingAnswer, TrainingSession
+from .serializers import (
+    StartTrainingRequestSerializer,
+    SubmitTrainingAnswerRequestSerializer,
+)
 
 
 class StartTrainingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        subject = request.data.get('subject')
-        tasks_count = request.data.get('tasks_count')
+        serializer = StartTrainingRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            tasks_count = int(tasks_count)
-        except (TypeError, ValueError):
-            return Response(
-                {'error': 'Поле tasks_count должно быть целым числом'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if tasks_count <= 0:
-            return Response(
-                {'error': 'tasks_count должен быть больше 0'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        subject = serializer.validated_data['subject']
+        tasks_count = serializer.validated_data['tasks_count']
 
         available_tasks = Task.objects.filter(subject=subject)
         if not available_tasks.exists():
@@ -74,15 +67,13 @@ class SubmitTrainingAnswerView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        session_id = request.data.get('session_id')
-        task_id = request.data.get('task_id')
-        user_answer = str(request.data.get('answer', '')).strip()
+        serializer = SubmitTrainingAnswerRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if not session_id or not task_id or user_answer == '':
-            return Response(
-                {'error': 'Укажите session_id, task_id и answer'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        session_id = serializer.validated_data['session_id']
+        task_id = serializer.validated_data['task_id']
+        user_answer = serializer.validated_data['answer']
 
         session = get_object_or_404(TrainingSession, id=session_id, user=request.user)
 
@@ -91,6 +82,12 @@ class SubmitTrainingAnswerView(APIView):
                 {'error': 'Тренировка уже завершена'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if session.current_position >= session.total_tasks:
+            session.is_finished = True
+            session.finished_at = timezone.now()
+            session.save(update_fields=['is_finished', 'finished_at'])
+            return Response({'error': 'Тренировка уже завершена'}, status=status.HTTP_400_BAD_REQUEST)
 
         expected_task_id = session.task_ids[session.current_position]
         if int(task_id) != expected_task_id:

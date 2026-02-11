@@ -77,3 +77,33 @@ class TrainingFlowTests(APITestCase):
 
         session = TrainingSession.objects.get(id=session_id)
         self.assertTrue(session.is_finished)
+
+
+    def test_start_training_requires_valid_payload(self):
+        response = self.client.post(
+            reverse('training-start'),
+            {'subject': 'unknown_subject', 'tasks_count': 0},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('subject', response.data)
+        self.assertIn('tasks_count', response.data)
+
+    def test_submit_training_requires_current_task_order(self):
+        start_response = self.client.post(
+            reverse('training-start'),
+            {'subject': 'math', 'tasks_count': 2},
+            format='json',
+        )
+        self.assertEqual(start_response.status_code, status.HTTP_201_CREATED)
+
+        session_id = start_response.data['session_id']
+        wrong_task_id = Task.objects.exclude(id=start_response.data['task']['id']).first().id
+
+        response = self.client.post(
+            reverse('training-submit'),
+            {'session_id': session_id, 'task_id': wrong_task_id, 'answer': '42'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'Нарушен порядок задач в тренировке')
