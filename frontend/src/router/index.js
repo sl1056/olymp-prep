@@ -20,6 +20,21 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
     },
     {
+      path: '/training/result',
+      name: 'profile',
+      component: () => import('../views/training/trainResult.vue'),
+    },
+    {
+      path: '/training/start',
+      name: 'startTraning',
+      component: () => import('../views/training/startView.vue'),
+    },
+    {
+      path: '/training/study',
+      name: 'trainStudy',
+      component: () => import('../views/training/trainStudyView.vue'),
+    },
+    {
       path: '/profile/stats',
       name: 'stats',
       component: () => import('../views/ProfileStatsView.vue'),
