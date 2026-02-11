@@ -455,9 +455,11 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     
-    toggleAnswerVisibility(taskId) {
-      this.$set(this.answerVisible, taskId, !this.answerVisible[taskId]);
-    },
+ toggleAnswerVisibility(taskId) {
+  this.answerVisible[taskId] = !this.answerVisible[taskId];
+  // Принудительное обновление
+  this.answerVisible = { ...this.answerVisible };
+},
     
     applySorting(tasks) {
       if (!tasks || !Array.isArray(tasks)) {
@@ -536,7 +538,6 @@ export default {
 
 .panel-header {
   padding: 24px 20px;
-  border-bottom: 2px solid #E0E0E0;
 }
 
 .panel-header h2 {
@@ -787,7 +788,7 @@ export default {
   box-shadow: none;
 }
 
-/* Общие стили для секций */
+/* Общие стили */
 .section-title {
   display: flex;
   justify-content: space-between;
@@ -823,13 +824,11 @@ export default {
   box-shadow: 0 4px 12px rgba(229,57,53,0.3);
 }
 
-/* Стили для найденного задания */
 .search-result-section {
   margin-bottom: 40px;
   animation: fadeIn 0.5s ease;
 }
 
-/* Стили для отсутствия результатов поиска */
 .no-search-results {
   margin-bottom: 40px;
   animation: fadeIn 0.5s ease;
