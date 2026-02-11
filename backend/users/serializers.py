@@ -14,6 +14,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'rating',
             'solved_tasks',
             'correct_answers',
+            'created_at',
         )
 
 class RegisterSerializer(serializers.ModelSerializer):
