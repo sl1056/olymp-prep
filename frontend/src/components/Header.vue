@@ -593,34 +593,4 @@ export default {
     top: 50px;
   }
 }
-
-@media (prefers-color-scheme: dark) {
-  .header {
-    background-color: #1a1a1a;
-  }
-  
-  .brand-name,
-  .mobile-brand-name {
-    color: #ffffff;
-  }
-  
-  .nav-btn {
-    background-color: #2c3e50;
-    color: #ffffff;
-    border-color: #ffffff;
-  }
-  
-  .auth-btn {
-    background-color: #1e3a5c;
-    border-color: #1e3a5c;
-  }
-  
-  .mobile-menu {
-    background-color: #1a1a1a;
-  }
-  
-  .mobile-menu-header {
-    border-bottom-color: #333;
-  }
-}
 </style>
