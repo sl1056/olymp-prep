@@ -17,6 +17,7 @@
           <button class="nav-btn" @click="goToTraining">Тренинг</button>
           <button class="nav-btn" :class="{ active: $route.path === '/' }" @click="goToHome">Главная</button>
           <button class="nav-btn" @click="goToPvP">PvP</button>
+          <button class="nav-btn" @click="goToStudy">Задания</button>
         </div>
       </div>
       
@@ -94,12 +95,17 @@ export default {
     
     goToTraining() {
       this.closeMobileMenu();
-      this.$router.push('/test');
+      this.$router.push('/training/start');
     },
     
     goToPvP() {
       this.closeMobileMenu();
       this.$router.push('/pvp');
+    },
+
+    goToStudy() {
+      this.closeMobileMenu();
+      this.$router.push('/tasks');
     },
     
     goToAuth() {
@@ -204,7 +210,7 @@ export default {
 
 .nav-buttons {
   display: flex;
-  gap: 100px;
+  gap: 50px;
   justify-content: center;
   align-items: center;
   margin: 0 auto;
