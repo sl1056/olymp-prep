@@ -21,7 +21,7 @@ const router = createRouter({
     },
     {
       path: '/training/result',
-      name: 'profile',
+      name: 'trainResult',
       component: () => import('../views/training/trainResult.vue'),
     },
     {
