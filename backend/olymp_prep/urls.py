@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/', include('tasks.urls')),
     path('api/pvp/', include('pvp.urls')),
     path('api/analytics/', include('analytics.urls')),
+    path('api/training/', include('training.urls')),
 ]
