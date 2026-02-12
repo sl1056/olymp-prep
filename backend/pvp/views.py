@@ -1,3 +1,4 @@
+# pvp/views.py
 import random
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -10,7 +11,6 @@ from tasks.models import Task
 
 
 class CreateMatchView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -31,41 +31,29 @@ class CreateMatchView(APIView):
 
         task = random.choice(tasks)
 
-
         match = Match.objects.create(
             player1=request.user,
             task=task,
             status='waiting'
         )
 
-        match_code = str(match.id)
-
         return Response({
             "match_id": match.id,
-            "match_code": match_code,
+            "match_code": str(match.id), 
             "status": match.status,
             "task_text": match.task.text,
-            "share_link": f"/join/{match_code}"
+            "share_link": f"/join/{match.id}"
         }, status=status.HTTP_201_CREATED)
 
 
 class JoinMatchView(APIView):
-
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, match_code):
+    def post(self, request, match_id):
         try:
-            match = Match.objects.get(id=match_code)
+            match = Match.objects.get(id=match_id, status='waiting')
         except Match.DoesNotExist:
-            return Response({"error": "Матч не найден"}, status=status.HTTP_404_NOT_FOUND)
-
-        if match.status != 'waiting':
-            if match.status == 'active':
-                return Response({"error": "Матч уже начался"}, status=status.HTTP_400_BAD_REQUEST)
-            elif match.status == 'finished':
-                return Response({"error": "Матч уже завершен"}, status=status.HTTP_400_BAD_REQUEST)
-            elif match.status == 'cancelled':
-                return Response({"error": "Матч отменен"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Матч не найден или уже начался"}, status=status.HTTP_404_NOT_FOUND)
 
         if match.player1 == request.user:
             return Response({"error": "Вы уже создали этот матч"}, status=status.HTTP_400_BAD_REQUEST)
@@ -77,9 +65,10 @@ class JoinMatchView(APIView):
         match.status = 'active'
         match.started_at = timezone.now()
         match.save()
+
         return Response({
             "match_id": match.id,
-            "match_code": match_code,
+            "match_code": str(match.id),
             "status": match.status,
             "task_text": match.task.text,
             "player1": match.player1.username,
@@ -90,12 +79,12 @@ class JoinMatchView(APIView):
 class MatchStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, match_code):
-        match = get_object_or_404(Match, id=match_code)
+    def get(self, request, match_id):
+        match = get_object_or_404(Match, id=match_id)
 
         is_participant = (
-                match.player1 == request.user or
-                (match.player2 and match.player2 == request.user)
+            match.player1 == request.user or
+            (match.player2 and match.player2 == request.user)
         )
 
         if not is_participant:
