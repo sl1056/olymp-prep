@@ -1,7 +1,7 @@
 <template>
-      <head>
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </head>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  </head>
   <div>
     <HeaderEnter />
     
@@ -158,15 +158,16 @@ export default {
       return userData.value?.username?.charAt(0)?.toUpperCase() || '?'
     })
     
+    // ИСПРАВЛЕНО: только дата, без времени
     const formattedDate = computed(() => {
-      if (!userData.value?.date_joined) return 'Не указана'
+      if (!userData.value?.created_at) return 'Не указана'
       
       try {
-        const date = new Date(userData.value.date_joined)
+        const date = new Date(userData.value.created_at)
         return date.toLocaleDateString('ru-RU', {
-          day: '2-digit',
+          year: 'numeric',
           month: '2-digit',
-          year: 'numeric'
+          day: '2-digit'
         })
       } catch (error) {
         return 'Не указана'
@@ -256,6 +257,7 @@ export default {
 </script>
 
 <style scoped>
+/* Стили полностью без изменений, оставлены как в оригинале */
 html, body {
   overflow-x: hidden;
   width: 100%;
