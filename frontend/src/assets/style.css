@@ -1,0 +1,143 @@
+.active {
+    color: black;
+}
+.passive {
+    color: rgb(180, 180, 180);
+}
+a {
+    font-family: "Anonymous Pro", monospace;
+    font-weight: 900;
+    font-style: normal;
+    text-decoration: none;
+    font-size: 48px;
+}
+p {
+    font-family: "Anonymous Pro", monospace;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 32px;
+    margin-bottom: 1px;
+    margin-left: 20px;
+}
+.app {
+    width: 600px;
+    float: right;
+    text-align: left;
+    margin-right: 292px;
+    margin-top: 150px;
+}
+.enter {
+    font-family: "Anonymous Pro", monospace;
+    appearance: none;
+    background-color: none;
+    border: 1px solid;
+    border-color: rgb(180, 180, 180);
+    line-height: 0;
+    font-size: 26px;
+    width: 125%;
+    height: 50px;
+    display: block;
+    box-sizing: border-box;
+    border-radius: 60px;
+    color: black;
+    font-weight: 100;
+    letter-spacing: 0.011em;
+    position: relative;
+    padding-left: 20px;
+}
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+}
+.checkboxA {
+    font-family: "Anonymous Pro", monospace;
+    font-weight: 500;
+    font-style: normal;
+    text-decoration: none;
+    font-size: 22px;
+}
+.add {
+    width: 730px;
+    text-align: center;
+}
+.forgotten {
+    font-family: "Anonymous Pro", monospace;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 22px;
+    margin-bottom: 1px;
+    margin-left: 120px;
+    text-decoration: none;
+    color: rgb(160, 160, 160);
+}
+.enter_button {
+    margin-left: 112px;
+    margin-top: 20px;
+    font-family: "Anonymous Pro", monospace;
+    appearance: none;
+    border-color: rgb(34, 71, 98);
+    background-color: rgb(34, 71, 98);
+    line-height: 0;
+    font-size: 26px;
+    width: 90%;
+    height: 50px;
+    display: block;
+    box-sizing: border-box;
+    border-radius: 60px;
+    color: white;
+    letter-spacing: 0.011em;
+    position: center;
+    cursor: pointer;
+}
+.buttons {
+    text-align: center;
+    margin-bottom: 100px;
+    width: 1900px;
+}
+.header-button {
+    font-family: "Roboto", normal;
+    border-color: rgb(0, 0, 0);
+    background-color: #7896AA;
+    line-height: 0;
+    font-size: 26px;
+    width: 12%;
+    height: 40px;
+    box-sizing: border-box;
+    border-radius: 60px;
+    color: rgb(0, 0, 0);
+    letter-spacing: 0.011em;
+    margin-left: 2%;
+    margin-top: 20px;
+}
+.header-enter_button {
+    margin-top: 1%;
+    margin-right: 10px;
+    font-family: "Anonymous Pro", monospace;
+    appearance: none;
+    border-color: rgb(34, 71, 98);
+    background-color: rgb(34, 71, 98);
+    line-height: 0;
+    font-size: 26px;
+    width: 8%;
+    height: 40px;
+    display: block;
+    box-sizing: border-box;
+    border-radius: 60px;
+    color: white;
+    letter-spacing: 0.011em;
+    position: center;
+}
+.header-a {
+    margin-top: 12px;
+    margin-left: 5%;
+    position: absolute;
+    font-size: 25px;
+    font-weight: 1;
+    font-weight: 400;
+    font-family: "Alexandria", normal;
+}
+header {
+    display: flex;
+    width: 1900px;
+    height: 200px;
+}
