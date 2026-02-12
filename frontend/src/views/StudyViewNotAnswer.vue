@@ -92,7 +92,7 @@
           </div>
         </div>
 
-        <!-- Режим поиска - просто показываем найденное задание -->
+        <!-- Режим поиска - показываем найденное задание -->
         <div v-if="isSearchMode && searchResult" class="search-result-section">
           <div class="section-title">
             <h2>Найденное задание №{{ searchResult.id }}</h2>
@@ -126,7 +126,7 @@
               
               <div v-if="answerVisible[searchResult.id]" class="answer-block">
                 <div class="answer-label">Ответ:</div>
-                <div class="answer-value">{{ searchResult.answer }}</div>
+                <div class="answer-value">{{ searchResult.correct_answer || searchResult.answer || 'Ответ не указан' }}</div>
               </div>
             </div>
           </div>
@@ -178,7 +178,7 @@
                   
                   <div v-if="answerVisible[item.id]" class="answer-block">
                     <div class="answer-label">Ответ:</div>
-                    <div class="answer-value">{{ item.answer }}</div>
+                    <div class="answer-value">{{ item.correct_answer || item.answer || 'Ответ не указан' }}</div>
                   </div>
                 </div>
               </div>
@@ -355,15 +355,25 @@ export default {
       try {
         const result = await axios.get('http://localhost:8000/api/tasks/');
         
+        let tasks = [];
         if (Array.isArray(result.data)) {
-          this.taskCollection = result.data;
+          tasks = result.data;
         } else if (result.data.results) {
-          this.taskCollection = result.data.results;
+          tasks = result.data.results;
         } else if (result.data.tasks) {
-          this.taskCollection = result.data.tasks;
+          tasks = result.data.tasks;
         } else {
-          this.taskCollection = [];
+          tasks = [];
         }
+        
+        // Нормализация данных - чтобы работало и с answer, и с correct_answer
+        this.taskCollection = tasks.map(task => ({
+          ...task,
+          // Приводим к единому формату
+          correct_answer: task.correct_answer || task.answer || 'Ответ не указан',
+          answer: task.answer || task.correct_answer || 'Ответ не указан'
+        }));
+        
       } catch (err) {
         console.error('Ошибка при загрузке заданий:', err);
         this.fetchError = 'Не удалось загрузить задания. Проверьте подключение к серверу.';
@@ -455,11 +465,11 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     
- toggleAnswerVisibility(taskId) {
-  this.answerVisible[taskId] = !this.answerVisible[taskId];
-  // Принудительное обновление
-  this.answerVisible = { ...this.answerVisible };
-},
+    toggleAnswerVisibility(taskId) {
+      this.answerVisible[taskId] = !this.answerVisible[taskId];
+      // Принудительное обновление
+      this.answerVisible = { ...this.answerVisible };
+    },
     
     applySorting(tasks) {
       if (!tasks || !Array.isArray(tasks)) {
