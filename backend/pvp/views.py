@@ -39,7 +39,7 @@ class CreateMatchView(APIView):
 
         return Response({
             "match_id": match.id,
-            "match_code": str(match.id), 
+            "match_code": str(match.id),
             "status": match.status,
             "task_text": match.task.text,
             "share_link": f"/join/{match.id}"
@@ -51,15 +51,25 @@ class JoinMatchView(APIView):
 
     def post(self, request, match_id):
         try:
+
             match = Match.objects.get(id=match_id, status='waiting')
         except Match.DoesNotExist:
-            return Response({"error": "Матч не найден или уже начался"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Матч не найден или уже начался"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         if match.player1 == request.user:
-            return Response({"error": "Вы уже создали этот матч"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Вы уже создали этот матч"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if match.player2:
-            return Response({"error": "Матч уже заполнен"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Матч уже заполнен"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         match.player2 = request.user
         match.status = 'active'
@@ -88,7 +98,10 @@ class MatchStatusView(APIView):
         )
 
         if not is_participant:
-            return Response({"error": "Доступ запрещён"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Доступ запрещён"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         return Response({
             "match_id": match.id,
