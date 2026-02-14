@@ -1,16 +1,25 @@
 <template>
+  <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Inter:opsz,wght@14..32,501&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@100..900&display=swap" rel="stylesheet">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+
   <HeaderEnter v-if="userData"></HeaderEnter>
   <Header v-else></Header>
   <div class="page">
     <div class="header">
       <h1>PVP МАТЧ</h1>
-      <p>СРАЖАЙТЕСЬ С ДРУГОМ, РЕШАЯ ОЛИМПИАДНЫЕ ЗАДАНИЯ ПО ВСЕМ ПРЕДМЕТАМ</p>
+      <p>сражайтесь с другом, решая олимпиадные задания по всем предметам</p>
     </div>
 
     <div class="cards">
       <div class="card card-create">
         <h2>СОЗДАТЬ МАТЧ</h2>
-        <p>Начни новый PvP-бой и пригласи соперника</p>
+        <p class="card-description">Начни новый PvP-бой и пригласи соперника</p>
         <button @click="createMatch" :disabled="creatingMatch">
           {{ creatingMatch ? 'СОЗДАНИЕ...' : 'НАЧАТЬ БОЙ' }}
         </button>
@@ -18,7 +27,7 @@
 
       <div class="card card-join">
         <h2>ПРИСОЕДИНИТЬСЯ</h2>
-        <p>Войди в матч по ссылке от друга</p>
+        <p class="card-description">Войди в матч по ссылке от друга</p>
         <input v-model="matchCode" placeholder="Введите код матча" />
         <button @click="joinMatch" :disabled="joiningMatch">
           {{ joiningMatch ? 'ПОДКЛЮЧЕНИЕ...' : 'ВОЙТИ В БОЙ' }}
@@ -98,7 +107,7 @@ export default {
       this.joiningMatch = true;
       
       try { 
-        // 1. Проверяем существование матча 
+        // Проверяем существование матча 
         const token = localStorage.getItem('authToken');
         const response = await axios.post(
           `http://localhost:8000/api/pvp/join/${code}/`
@@ -108,7 +117,7 @@ export default {
 
         this.matchId = response.data.match_id;
         
-        // 2. Подключаемся к WebSocket как участник
+        // Подключаемся к WebSocket как участник
         //this.connectWebSocket('player');
 
         await this.$router.push('/PvP/answer');
@@ -128,7 +137,6 @@ export default {
     },
 
     connectWebSocket(role) {
-      // Закрываем предыдущее соединение, если есть
       if (this.ws) {
         this.ws.close();
       }
@@ -169,18 +177,16 @@ export default {
       
       switch (data.type) {
         case 'match_ready':
-          // Матч готов к началу (оба игрока подключились)
+          // Матч готов к началу
           this.showWaitingModal = false;
           this.$router.push(`/pvp/match/${this.matchId}`);
           break;
           
         case 'player_joined':
-          // В матч присоединился игрок (для хоста)
           alert(`Игрок ${data.username} присоединился к матчу!`);
           break;
           
         case 'match_cancelled':
-          // Матч отменен
           this.showWaitingModal = false;
           alert('Матч был отменен создателем');
           break;
@@ -214,7 +220,7 @@ export default {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Inter', 'Alexandria', sans-serif;
   background: rgb(250, 246, 239);
   min-height: 100vh;
 }
@@ -241,6 +247,7 @@ h1 {
   color: #1a365d;
   margin-bottom: 16px;
   font-weight: 800;
+  font-family: 'Alexandria', 'Inter', sans-serif;
 }
 
 .header p {
@@ -248,6 +255,7 @@ h1 {
   color: #4a5568;
   line-height: 1.5;
   max-width: 600px;
+  font-family: 'Inter', 'Alexandria', sans-serif;
 }
 
 .cards {
@@ -284,24 +292,29 @@ h1 {
 
 .card h2 {
   font-size: 28px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   color: #2d3748;
+  font-family: 'Alexandria', 'Inter', sans-serif;
 }
 
-.card p {
+.card-description {
   color: #4a5568;
   margin-bottom: 32px;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-family: 'Inter', 'Alexandria', sans-serif;
+  font-size: 18px;
+  max-width: 300px;
 }
 
 .card input {
   width: 100%;
-  padding: 14px 18px;
+  padding: 16px 20px;
   border: 2px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 16px;
   margin-bottom: 24px;
   text-align: center;
+  font-family: 'Inter', 'Alexandria', sans-serif;
 }
 
 .card-join input {
@@ -312,11 +325,12 @@ h1 {
   width: 100%;
   padding: 16px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
   transition: 0.2s;
+  font-family: 'Inter', 'Alexandria', sans-serif;
 }
 
 .card button:disabled {
@@ -342,7 +356,6 @@ h1 {
   background: #2c5282;
 }
 
-/* Стили для модального окна */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -370,11 +383,13 @@ h1 {
   font-size: 24px;
   margin-bottom: 16px;
   color: #1a365d;
+  font-family: 'Alexandria', 'Inter', sans-serif;
 }
 
 .modal p {
   margin-bottom: 20px;
   color: #4a5568;
+  font-family: 'Inter', 'Alexandria', sans-serif;
 }
 
 .loader {
@@ -385,11 +400,6 @@ h1 {
   height: 50px;
   animation: spin 1s linear infinite;
   margin: 20px auto;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .cancel-btn {
@@ -403,6 +413,7 @@ h1 {
   cursor: pointer;
   transition: 0.2s;
   margin-top: 20px;
+  font-family: 'Inter', 'Alexandria', sans-serif;
 }
 
 .cancel-btn:hover {
