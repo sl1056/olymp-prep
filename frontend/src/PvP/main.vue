@@ -48,14 +48,13 @@ export default {
   
   data() {
     return {
-      matchCode: '',
+      matchId: null,
       userData: null,
       isLoading: true,
       creatingMatch: false,
       joiningMatch: false,
       showWaitingModal: false,
-      ws: null,
-      matchId: null,
+      ws: '',
     }
   },
 
@@ -63,12 +62,12 @@ export default {
     await this.fetchUserData();
   },
 
-  beforeUnmount() {
-    // Закрываем соединение WebSocket при покидании страницы
-    if (this.ws) {
-      this.ws.close();
-    }
-  },
+  //beforeUnmount() {
+  //  // Закрываем соединение WebSocket при покидании страницы
+  //  if (this.ws) {
+  //    this.ws.close();
+  //  }
+  //},
 
   methods: {
     async fetchUserData() {
@@ -78,6 +77,7 @@ export default {
           axios.defaults.headers.common['Authorization'] = `Token ${token}`;
           const response = await axios.get('http://localhost:8000/api/auth/profile/');
           this.userData = response.data;
+          console.log(token)
         }
       } catch (err) {
         console.error('Ошибка при загрузке данных пользователя:', err);
@@ -92,32 +92,31 @@ export default {
     },
 
     async joinMatch() {
-      const code = this.matchCode;
-      
-      if (!code) {
-        alert('Введите код матча');
-        return;
-      }
-
       if (!this.userData) {
         alert('Пожалуйста, войдите в систему для присоединения к матчу');
         return;
       }
 
       this.joiningMatch = true;
+
+      console.log(this.matchId)
       
       try { 
-        // Проверяем существование матча 
+        // 1. Проверяем существование матча 
         const token = localStorage.getItem('authToken');
-        const response = await axios.post(
-          `http://localhost:8000/api/pvp/join/${code}/`
-        );
+        if (token) {
+          const response = await axios.post(
+            `http://localhost:8000/api/pvp/join/${this.matchId}/`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+          console.log(response.data)
+        }
 
-        console.log(response.data)
-
-        this.matchId = response.data.match_id;
+        localStorage.setItem('currentMatchId', this.matchId);
         
-        // Подключаемся к WebSocket как участник
         //this.connectWebSocket('player');
 
         await this.$router.push('/PvP/answer');
@@ -137,13 +136,22 @@ export default {
     },
 
     connectWebSocket(role) {
-      if (this.ws) {
-        this.ws.close();
-      }
+      // Закрываем предыдущее соединение, если есть
+      //if (this.ws) {
+      //  this.ws.close();
+      //}
 
       // Подключаемся к WebSocket
-      const wsUrl = `ws://localhost:8000/ws/pvp/${this.matchId}/`;
-      this.ws = new WebSocket(wsUrl);
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        const wsUrl = `ws://localhost:8000/ws/pvp/${this.matchId}/?token=${token}/${
+          {
+            "command": "submit_answer",
+            "answer": "10"
+          }
+        }`;
+        this.ws = new WebSocket(wsUrl)
+      }
 
       this.ws.onopen = () => {
         console.log('WebSocket подключен');
@@ -177,22 +185,26 @@ export default {
       
       switch (data.type) {
         case 'match_ready':
-          // Матч готов к началу
+          // Матч готов к началу (оба игрока подключились)
           this.showWaitingModal = false;
           this.$router.push(`/pvp/match/${this.matchId}`);
           break;
           
         case 'player_joined':
+          // В матч присоединился игрок (для хоста)
           alert(`Игрок ${data.username} присоединился к матчу!`);
           break;
           
         case 'match_cancelled':
+          // Матч отменен
           this.showWaitingModal = false;
+          this.ws.close();
           alert('Матч был отменен создателем');
           break;
           
         case 'error':
           alert(`Ошибка: ${data.message}`);
+          this.ws.close();
           break;
       }
     },
@@ -206,7 +218,6 @@ export default {
       }
       this.showWaitingModal = false;
       this.matchId = null;
-      this.matchCode = '';
     }
   }
 }
