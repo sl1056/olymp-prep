@@ -14,7 +14,7 @@
             <div class="status-dot"></div>
             <span class="status-text">Ожидается</span>
           </div>
-          <div class="match-code-display">Код: {{ currentMatch.matchCode }}</div>
+          <div class="match-code-display">Код: {{ currentMatch.matchId }}</div>
         </div>
 
         <div class="match-properties">
@@ -72,23 +72,25 @@ export default {
   
   setup() {
     const router = useRouter()
+    // Исправление: используем ref правильно
+    const ws = ref(null)
+    const socket = ref(null) // У вас дублирование, оставим один
     
     // Реактивные данные
     const currentMatch = ref({
-      subject: localStorage.getItem('currentMatchSubject') || 'Не указан',
+      subject: localStorage.getItem('currentMatchSubject') || 'Не указан', // Исправлено: был пробел в ключе
       difficulty: localStorage.getItem('currentMatchDifficulty') || 'Средняя',
-      matchCode: localStorage.getItem('currentMatchId') || 'Нет кода'
+      matchId: localStorage.getItem('currentMatchId') || 'Нет кода'
     })
     
     const userData = ref(null)
-    const socket = ref(null)
     const checkInterval = ref(null)
     const isLoading = ref(true)
 
     // Computed
     const invitationLink = computed(() => {
       const baseUrl = window.location.origin
-      return `${baseUrl}/join/${currentMatch.value.matchCode}`
+      return `${baseUrl}/join/${currentMatch.value.matchId}`
     })
 
     // Методы
@@ -109,134 +111,120 @@ export default {
       }
     }
 
-    const connectWebSocket = () => {
+    // ИСПРАВЛЕНО: connectWebSocket - убрано использование this
+    const connectWebSocket = async (role) => {
+      // Закрываем предыдущее соединение, если есть
+      if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+        ws.value.close();
+      }
+
+      // Подключаемся к WebSocket
       const token = localStorage.getItem('authToken');
       const matchId = localStorage.getItem('currentMatchId');
+      
+      if (token && matchId) {
+        const wsUrl = `ws://localhost:8000/ws/pvp/${matchId}/?token=${token}`;
+        ws.value = new WebSocket(wsUrl);
+        console.log('WebSocket: ', ws.value);
 
-      console.log('=== WebSocket Debug ===');
-      console.log('Token:', token ? `Present (${token.substring(0, 10)}...)` : 'MISSING');
-      console.log('Match ID:', matchId || 'MISSING');
-
-      if (!token) {
-        console.error('ERROR: No auth token in localStorage');
-        alert('Ошибка авторизации. Пожалуйста, войдите снова.');
-        router.push('/login');
-        return;
-      }
-
-      if (!matchId) {
-        console.error('ERROR: No match ID in localStorage');
-        alert('Ошибка: ID матча не найден');
-        return;
-      }
-    
-      // Вариант 1: Без токена в URL (если токен передается в заголовках)
-      const wsUrl = `ws://localhost:8000/ws/pvp/${matchId}/?token=${token}`;
-
-      // Вариант 2: С токеном в query параметре
-      // const wsUrl = `ws://localhost:8000/ws/pvp/${matchId}/?token=${encodeURIComponent(token)}`;
-
-      console.log('WebSocket URL:', wsUrl);
-
-      try {
-        socket.value = new WebSocket(wsUrl);
-
-        // Добавляем таймаут для соединения
-        const connectionTimeout = setTimeout(() => {
-          if (socket.value && socket.value.readyState === WebSocket.CONNECTING) {
-            console.error('WebSocket connection timeout');
-            socket.value.close();
-            alert('Не удалось подключиться к серверу. Проверьте интернет соединение.');
-          }
-        }, 5000);
-
-        socket.value.onopen = () => {
-          console.log('✅ WebSocket успешно подключен');
-          clearTimeout(connectionTimeout);
-
-          // Отправляем сообщение с токеном после открытия соединения
-          const authMessage = {
-            type: 'authenticate',
-            token: token
-          };
-          socket.value.send(JSON.stringify(authMessage));
-          console.log('Отправлен запрос аутентификации');
-        };
-
-        socket.value.onmessage = (event) => {
-          console.log('📨 Получено сообщение:', event.data);
-
-          try {
-            const data = JSON.parse(event.data);
-            console.log('Parsed data:', data);
-
-            if (data.type === 'player_joined') {
-              console.log('🎮 Игрок присоединился! Переход на страницу ответов...');
-              router.push('/PvP/answer');
-            } else if (data.type === 'auth_success') {
-              console.log('✅ Аутентификация успешна');
-            } else if (data.type === 'auth_error') {
-              console.error('❌ Ошибка аутентификации:', data.message);
-              alert('Ошибка авторизации: ' + data.message);
-            } else if (data.type === 'error') {
-              console.error('❌ Ошибка WebSocket:', data.message);
-            }
-          } catch (error) {
-            console.error('Ошибка парсинга JSON:', error, 'Raw:', event.data);
+        ws.value.onopen = () => {
+          console.log('WebSocket подключен');
+          
+          // Отправляем информацию о пользователе
+          if (userData.value) {
+            const message = {
+              type: 'join',
+              role: role,
+              user_id: userData.value.id,
+              username: userData.value.username
+            };
+            ws.value.send(JSON.stringify(message));
           }
         };
 
-        socket.value.onerror = (error) => {
-          console.error('❌ WebSocket error event:', error);
-          console.error('WebSocket readyState:', socket.value?.readyState);
-          clearTimeout(connectionTimeout);
+        ws.value.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data); // Убедитесь, что этот метод определен
+        };
 
-          // Проверяем конкретные ошибки
-          if (error && error.target && error.target.readyState === WebSocket.CLOSED) {
-            console.error('Соединение было закрыто до установки');
+        // ИСПРАВЛЕНО: onerror - используем стрелочную функцию и не обращаемся к arguments
+        ws.value.onerror = (error) => {
+          console.error('WebSocket ошибка:', error);
+          // Не используем arguments, error.message, error.type
+          if (error && error.message) {
+            console.log('Детали ошибки:', error.message);
           }
         };
 
-        socket.value.onclose = (event) => {
-          console.log('🔌 WebSocket закрыт:', {
-            code: event.code,
-            reason: event.reason,
-            wasClean: event.wasClean
-          });
-          clearTimeout(connectionTimeout);
-
-          if (!event.wasClean) {
-            console.error('Соединение разорвано неестественно');
-            // Пытаемся переподключиться через 3 секунды
-            setTimeout(() => {
-              console.log('Попытка переподключения...');
-              connectWebSocket();
-            }, 3000);
-          }
+        ws.value.onclose = (event) => {
+          console.log('WebSocket отключен. Код:', event.code, 'Причина:', event.reason);
         };
-
-      } catch (error) {
-        console.error('Исключение при создании WebSocket:', error);
       }
     }
 
+    // ИСПРАВЛЕНО: checkStatus - убрано использование this
     const checkStatus = async () => {
       try {
-        const matchCode = currentMatch.value?.matchCode;
-        if (!matchCode || matchCode === 'Нет кода') {
+        const matchId = currentMatch.value?.matchId;
+        if (!matchId || matchId === 'Нет кода') {
           console.error('Match code not found');
           return;
         }
-        
-        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchCode}`);
+
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          console.error('Auth token not found');
+          router.push('/login');
+          return;
+        }
+
+        console.log("Token: ", token, matchId);
+        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
         console.log('Current status:', response.data);
-        
+
         if (response.data.status === 'active') {
           stopStatusChecking();
+          // Закрываем WebSocket перед переходом
+          if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+            ws.value.close(1000, 'Match started');
+          }
           router.push(`/PvP/answer`);
         }
       } catch (err) {
         console.error('Error checking match status:', err);
+        // ИСПРАВЛЕНО: используем ws.value вместо this.ws
+        if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+          ws.value.close();
+        }
+        if (err.response?.status === 401) {
+          console.error('Unauthorized: Invalid or expired token');
+          localStorage.removeItem('authToken');
+          router.push('/login');
+        }
+      }
+    }
+
+    // Добавим обработчик сообщений WebSocket, если он нужен
+    const handleWebSocketMessage = (data) => {
+      console.log('Получено сообщение:', data);
+      // Обработка различных типов сообщений
+      switch(data.type) {
+        case 'player_joined':
+          console.log('Игрок присоединился:', data.username);
+          // Можно обновить UI
+          break;
+        case 'match_started':
+          console.log('Матч начался!');
+          stopStatusChecking();
+          router.push(`/PvP/answer`);
+          break;
+        default:
+          console.log('Неизвестный тип сообщения:', data.type);
       }
     }
 
@@ -279,8 +267,8 @@ export default {
       
       if (userConfirmed) {
         // Закрываем WebSocket если открыт
-        if (socket.value && socket.value.readyState === WebSocket.OPEN) {
-          socket.value.close(1000, 'User cancelled match');
+        if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+          ws.value.close(1000, 'User cancelled match');
         }
         
         stopStatusChecking();
@@ -291,17 +279,29 @@ export default {
     // Хуки жизненного цикла
     onMounted(async () => {
       console.log('Компонент монтирован');
-      console.log('Match ID из localStorage:', localStorage.getItem('currentMatchId'));
+      console.log('Match ID из localStorage:', currentMatch.value.matchId);
       
       await fetchUserData();
+      // Ждем загрузки данных пользователя перед подключением
+      if (userData.value) {
+        connectWebSocket("host");
+      } else {
+        // Если данные не загрузились, пробуем еще раз через небольшую задержку
+        setTimeout(() => {
+          if (userData.value) {
+            connectWebSocket("host");
+          } else {
+            console.warn('Данные пользователя не загружены, WebSocket не подключен');
+          }
+        }, 500);
+      }
       startStatusChecking();
-      connectWebSocket();
     })
 
     onUnmounted(() => {
       // Очистка при размонтировании
-      if (socket.value && socket.value.readyState === WebSocket.OPEN) {
-        socket.value.close(1000, 'Component unmounted');
+      if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+        ws.value.close(1000, 'Component unmounted');
       }
       
       stopStatusChecking();

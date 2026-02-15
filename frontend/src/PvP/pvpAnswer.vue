@@ -137,6 +137,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   name: 'TaskAnswer',
   
@@ -146,6 +147,7 @@ export default {
       currentAnswer: '',
       yourScore: 0,
       opponentScore: 0,
+      ws: '',
       
       answers: Array(10).fill().map(() => ({ answered: false, correct: false })),
       
@@ -171,6 +173,7 @@ export default {
 
   async created() {
     await this.startStatusChecking();
+    this.connectWebSocket("player");
   },
 
   beforeUnmount() {
@@ -208,6 +211,49 @@ export default {
   },
   
   methods: {
+
+    connectWebSocket(role) {
+      // Закрываем предыдущее соединение, если есть
+      if (this.ws) {
+        return 0;
+      }
+
+      // Подключаемся к WebSocket
+      const token = localStorage.getItem('authToken');
+      const matchId = localStorage.getItem('currentMatchId');
+      if (token) {
+        const wsUrl = `ws://localhost:8000/ws/pvp/${matchId}/?token=${token}`;
+        this.ws = new WebSocket(wsUrl);
+        console.log(this.ws);
+      }
+
+      this.ws.onopen = () => {
+        console.log('WebSocket подключен');
+        
+        // Отправляем информацию о пользователе
+        const message = {
+          type: 'join',
+          role: role,
+          user_id: this.userData.id,
+          username: this.userData.username
+        };
+        this.ws.send(JSON.stringify(message));
+      };
+
+      this.ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        this.handleWebSocketMessage(data);
+      };
+
+      this.ws.onerror = (error) => {
+        console.error('WebSocket ошибка:', error);
+      };
+
+      this.ws.onclose = () => {
+        console.log('WebSocket отключен');
+      };
+    },
+
     getCurrentQuestion() {
       return this.questions[this.currentQuestion - 1]
     },
@@ -244,24 +290,39 @@ export default {
 
     async checkStatus() {
       try {
-        // Используем currentMatch.matchCode из ref
-        const matchCode = this.currentMatch?.matchCode;
-        if (!matchCode) {
+        const matchId = localStorage.getItem('currentMatchId');
+        if (!matchId || matchId === 'Нет кода') {
           console.error('Match code not found');
           return;
         }
-        
-        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchCode}`);
-        this.status = response.data.status;
+
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          console.error('Auth token not found');
+          router.push('/login');
+          return;
+        }
+
+        console.log("Token: ", token, matchId);
+        const response = await axios.get(`http://localhost:8000/api/pvp/status/${matchId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}` // ИЗМЕНЕНО: Token -> Bearer
+          }
+        });
+
         console.log('Current status:', response.data);
-        
-        // Если статус показывает, что матч готов, можно перенаправить
-        if (response.data.status === 'active') {
-          this.stopStatusChecking();
-          this.$router.push(`/PvP/answer`);
+
+        if (response.data.status === 'cancelled') {
+          stopStatusChecking();
+          router.push(`/PvP/main`);
         }
       } catch (err) {
         console.error('Error checking match status:', err);
+        if (err.response?.status === 401) {
+          console.error('Unauthorized: Invalid or expired token');
+          localStorage.removeItem('authToken');
+          router.push('/login');
+        }
       }
     },
 

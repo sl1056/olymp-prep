@@ -296,10 +296,8 @@ export default {
         );
         
         this.matchId = response.data.match_id;
-        this.matchCode = response.data.code;
         
         localStorage.setItem('currentMatchId', this.matchId);
-        localStorage.setItem('currentMatchCode', this.matchCode);
         localStorage.setItem('currentMatchDifficulty', this.currentDifficulty);
         localStorage.setItem('currentMatchSubject', this.currentSubject);
         localStorage.setItem('matchRole', 'host');
