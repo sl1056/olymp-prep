@@ -86,51 +86,41 @@
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   name: "TaskSetup",
   data() {
     return {
       subjects: [
-        // Точные науки
         { id: 'math', name: 'Математика', emoji: '∫' },
-        { id: 'geometry', name: 'Геометрия', emoji: '△' },
-        { id: 'discrete-math', name: 'Дискретная математика', emoji: '⊂' },
-        { id: 'physics', name: 'Физика', emoji: '⚛' },
-        { id: 'chemistry', name: 'Химия', emoji: '⚗' },
-        
-        // Естественные науки
-        { id: 'biology', name: 'Биология', emoji: '🧬' },
-        { id: 'ecology', name: 'Экология', emoji: '🌿' },
-        { id: 'geography', name: 'География', emoji: '🌎' },
-        { id: 'astronomy', name: 'Астрономия', emoji: '🌌' },
-        
-        // Языки
-        { id: 'russian', name: 'Русский язык', emoji: '🇷🇺' },
-        { id: 'literature', name: 'Литература', emoji: '📚' },
-        { id: 'english', name: 'Английский язык', emoji: '🇬🇧' },
-        { id: 'german', name: 'Немецкий язык', emoji: '🇩🇪' },
-        { id: 'french', name: 'Французский язык', emoji: '🇫🇷' },
-        { id: 'chinese', name: 'Китайский язык', emoji: '🇨🇳' },
-        { id: 'spanish', name: 'Испанский язык', emoji: '🇪🇸' },
-        { id: 'latin', name: 'Латинский язык', emoji: '🏛' },
-        
-        // Гуманитарные науки
-        { id: 'history', name: 'История', emoji: '📜' },
-        { id: 'social', name: 'Обществознание', emoji: '👥' },
+        { id: 'geom', name: 'Геометрия', emoji: '△' },
+        { id: 'd math', name: 'Дискретная математика', emoji: '⊂' },
+        { id: 'phys', name: 'Физика', emoji: '⚛' },
+        { id: 'chem', name: 'Химия', emoji: '⚗' },
+        { id: 'bio', name: 'Биология', emoji: '🧬' },
+        { id: 'eco', name: 'Экология', emoji: '🌿' },
+        { id: 'geo', name: 'География', emoji: '🌎' },
+        { id: 'astro', name: 'Астрономия', emoji: '🌌' },
+        { id: 'rus lang', name: 'Русский язык', emoji: '🇷🇺' },
+        { id: 'rus lit', name: 'Литература', emoji: '📚' },
+        { id: 'eng lang', name: 'Английский язык', emoji: '🇬🇧' },
+        { id: 'g lang', name: 'Немецкий язык', emoji: '🇩🇪' },
+        { id: 'fr lang', name: 'Французский язык', emoji: '🇫🇷' },
+        { id: 'ch lang', name: 'Китайский язык', emoji: '🇨🇳' },
+        { id: 'sp lang', name: 'Испанский язык', emoji: '🇪🇸' },
+        { id: 'lat lang', name: 'Латинский язык', emoji: '🏛' },
+        { id: 'hist', name: 'История', emoji: '📜' },
+        { id: 's st', name: 'Обществознание', emoji: '👥' },
         { id: 'law', name: 'Право', emoji: '⚖' },
-        { id: 'economics', name: 'Экономика', emoji: '📈' },
-        { id: 'finlit', name: 'Финансовая грамотность', emoji: '💰' },
-        
-        // Творчество и технологии
-        { id: 'art', name: 'Искусство (МХК)', emoji: '🎨' },
-        { id: 'technology', name: 'Технология', emoji: '🔧' },
-        { id: 'informatics', name: 'Информатика', emoji: '💻' },
-        { id: 'robotics', name: 'Робототехника', emoji: '🤖' },
+        { id: 'econ', name: 'Экономика', emoji: '📈' },
+        { id: 'fin lit', name: 'Финансовая грамотность', emoji: '💰' },
+        { id: 'arts', name: 'Искусство (МХК)', emoji: '🎨' },
+        { id: 'tech', name: 'Технология', emoji: '🔧' },
+        { id: 'pc sci', name: 'Информатика', emoji: '💻' },
+        { id: 'robot', name: 'Робототехника', emoji: '🤖' },
         { id: 'ai', name: 'Искусственный интеллект', emoji: '🧠' },
-        
-        // Другое
-        { id: 'sport', name: 'Физкультура', emoji: '⚽' },
-        { id: 'safety', name: 'ОБЖ', emoji: '🛡' }
+        { id: 'pe', name: 'Физкультура', emoji: '⚽' },
+        { id: 'obzr', name: 'ОБЖ', emoji: '🛡' }
       ],
       selectedSubject: 'math',
 
@@ -166,19 +156,41 @@ export default {
     },
     async startTraining() {
       this.isStarting = true;
-      
+
       try {
         const trainingConfig = {
           subject: this.selectedSubject,
           difficulty: this.selectedDifficulty,
           quantity: this.taskQuantity
         };
-        
+
+        const startTimestamp = Date.now();
+
+        console.log(this.selectedSubject);
+        const token = localStorage.getItem('authToken');
         localStorage.setItem('trainingConfig', JSON.stringify(trainingConfig));
-        
+
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const response = await axios.post('http://localhost:8000/api/training/start/', {
+            'subject': this.selectedSubject,
+            'tasks_count': this.taskQuantity,
+        });
+
+        console.log(response.data);
+        localStorage.setItem('created', JSON.stringify(response.data));
+        localStorage.setItem('selectedSubject', this.selectedSubject);
+        localStorage.setItem('selectedDifficulty', this.selectedDifficulty);
+        localStorage.setItem('tasksCount', this.taskQuantity);
+
+        // Добавляем время начала в объект created для хранения
+        localStorage.setItem('time', JSON.stringify(startTimestamp));
+        console.log(startTimestamp);
+
+        console.log(JSON.stringify(trainingConfig));
+
         // Имитация загрузки
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         this.$router.push('/training/study');
       } catch (error) {
         console.error('Ошибка при запуске тренировки:', error);
@@ -186,6 +198,7 @@ export default {
         this.isStarting = false;
       }
     },
+    
     goBack() {
       const hasChanges = this.selectedSubject !== 'math' || 
                         this.selectedDifficulty !== 'random' ||

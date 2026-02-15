@@ -28,7 +28,7 @@
       <div class="card card-join">
         <h2>ПРИСОЕДИНИТЬСЯ</h2>
         <p class="card-description">Войди в матч по ссылке от друга</p>
-        <input v-model="matchCode" placeholder="Введите код матча" />
+        <input v-model="matchId" placeholder="Введите код матча" />
         <button @click="joinMatch" :disabled="joiningMatch">
           {{ joiningMatch ? 'ПОДКЛЮЧЕНИЕ...' : 'ВОЙТИ В БОЙ' }}
         </button>
@@ -144,13 +144,11 @@ export default {
       // Подключаемся к WebSocket
       const token = localStorage.getItem('authToken');
       if (token) {
-        const wsUrl = `ws://localhost:8000/ws/pvp/${this.matchId}/?token=${token}/${
-          {
-            "command": "submit_answer",
-            "answer": "10"
-          }
-        }`;
-        this.ws = new WebSocket(wsUrl)
+        const wsUrl = `ws://localhost:8000/ws/pvp/${this.matchId}/?token=${token}`;
+        this.ws.send(JSON.stringify({
+          command: "submit_answer",
+          answer: "10"
+        }));
       }
 
       this.ws.onopen = () => {

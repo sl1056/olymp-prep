@@ -16,15 +16,15 @@
       <div class="stats-card">
         <div class="stats-grid">
           <div class="stat-item">
-            <span class="stat-label">Всего заданий</span>
-            <span class="stat-value">{{ results.totalTasks }}</span>
+            <span class="stat-label">Всего заданий:</span>
+            <span class="stat-value">{{ this.results.totalTasks }}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">Сохранено ответов</span>
-            <span class="stat-value">{{ results.savedAnswers }}</span>
+            <span class="stat-label">Правильных ответов:</span>
+            <span class="stat-value">{{ this.results.savedAnswers }}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">Без ответа</span>
+            <span class="stat-label">Неверных ответов:</span>
             <span class="stat-value">{{ results.totalTasks - results.savedAnswers }}</span>
           </div>
         </div>
@@ -65,7 +65,7 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">Количество заданий:</span>
-            <span class="detail-value">{{ results.totalTasks }}</span>
+            <span class="detail-value">{{ this.results.totalTasks }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Сохранено ответов:</span>
@@ -79,6 +79,9 @@
         <button class="again-btn" @click="startNewTraining">
           Новая тренировка
         </button>
+        <button class="again-btn" @click="MainPage">
+          На главную
+        </button>
       </div>
     </div>
   </div>
@@ -91,28 +94,51 @@ export default {
   data() {
     return {
       results: {
-        subject: 'math',
-        difficulty: 'medium',
-        totalTasks: 0,
-        savedAnswers: 0,
+        subject: localStorage.getItem('selectedSubject'),
+        difficulty: localStorage.getItem('selectedDifficulty'),
+        totalTasks: localStorage.getItem('tasksCount'),
+        savedAnswers: localStorage.getItem('trainingResults'),
         timestamp: null
       },
       
       subjects: {
-        math: { id: 'math', name: 'МАТЕМАТИКА', emoji: '📐' },
-        physics: { id: 'physics', name: 'ФИЗИКА', emoji: '⚛️' },
-        chemistry: { id: 'chemistry', name: 'ХИМИЯ', emoji: '🧪' },
-        biology: { id: 'biology', name: 'БИОЛОГИЯ', emoji: '🧬' },
-        russian: { id: 'russian', name: 'РУССКИЙ ЯЗЫК', emoji: '📝' },
-        english: { id: 'english', name: 'АНГЛИЙСКИЙ ЯЗЫК', emoji: '🇬🇧' },
-        history: { id: 'history', name: 'ИСТОРИЯ', emoji: '🏺' },
-        informatics: { id: 'informatics', name: 'ИНФОРМАТИКА', emoji: '💻' }
+        math: { id: 'math', name: 'Математика', icon: '∫' },
+        geometry: { id: 'geom', name: 'Геометрия', icon: '△' },
+        discrete_math: { id: 'd math', name: 'Дискретная математика', icon: '⊂' },
+        physics: { id: 'phys', name: 'Физика', icon: '⚛' },
+        chemistry: { id: 'chem', name: 'Химия', icon: '⚗' },
+        biology: { id: 'bio', name: 'Биология', icon: '🧬' },
+        ecology: { id: 'eco', name: 'Экология', icon: '🌿' },
+        geography: { id: 'geo', name: 'География', icon: '🌎' },
+        astronomy: { id: 'astro', name: 'Астрономия', icon: '🌌' },
+        russian_language: { id: 'rus lang', name: 'Русский язык', icon: '🇷🇺' },
+        literature: { id: 'rus lit', name: 'Литература', icon: '📚' },
+        english_language: { id: 'eng lang', name: 'Английский язык', icon: '🇬🇧' },
+        german_language: { id: 'g lang', name: 'Немецкий язык', icon: '🇩🇪' },
+        french_language: { id: 'fr lang', name: 'Французский язык', icon: '🇫🇷' },
+        chinese_language: { id: 'ch lang', name: 'Китайский язык', icon: '🇨🇳' },
+        spanish_language: { id: 'sp lang', name: 'Испанский язык', icon: '🇪🇸' },
+        latin_language: { id: 'lat lang', name: 'Латинский язык', icon: '🏛' },
+        history: { id: 'hist', name: 'История', icon: '📜' },
+        social: { id: 's st', name: 'Обществознание', icon: '👥' },
+        law: { id: 'law', name: 'Право', icon: '⚖' },
+        economy: { id: 'econ', name: 'Экономика', icon: '📈' },
+        financial_literacy: { id: 'fin', name: 'Финансовая грамотность', icon: '💰' },
+        art: { id: 'art', name: 'Искусство (МХК)', icon: '🎨' },
+        technology: { id: 'tech', name: 'Технология', icon: '🔧' },
+        informatics: { id: 'pc sci', name: 'Информатика', icon: '💻' },
+        robotics: { id: 'robot', name: 'Робототехника', icon: '🤖' },
+        ai: { id: 'ai sci', name: 'Искусственный интеллект', icon: '🧠' },
+        physical_education: { id: 'pe', name: 'Физкультура', icon: '⚽' },
+        obzr: { id: 'obzr', name: 'ОБЖ', icon: '🛡' },
+        all: { id: 'all', name: 'Все предметы', icon: '🌟' }
       },
       
       difficultyLevels: {
         easy: { id: 'easy', name: 'ЛЁГКАЯ' },
         medium: { id: 'medium', name: 'СРЕДНЯЯ' },
-        hard: { id: 'hard', name: 'СЛОЖНАЯ' }
+        hard: { id: 'hard', name: 'СЛОЖНАЯ' },
+        random: { id: 'random', name: 'ЛЮБАЯ'}
       }
     }
   },
@@ -127,36 +153,41 @@ export default {
     },
     
     formattedDate() {
-      if (!this.results.timestamp) return '—'
-      
-      const date = new Date(this.results.timestamp)
-      const day = date.getDate().toString().padStart(2, '0')
+      const timeValue = localStorage.getItem('time')
+      if (!timeValue) return '—'
+
+      const date = new Date(Number(timeValue)) // Преобразуем строку в число
+      const day = date.getDate().toString().padStart(2, '0')  
       const month = (date.getMonth() + 1).toString().padStart(2, '0')
       const year = date.getFullYear()
       const hours = date.getHours().toString().padStart(2, '0')
       const minutes = date.getMinutes().toString().padStart(2, '0')
-      
+
       return `${day}.${month}.${year} ${hours}:${minutes}`
     }
   },
   
   created() {
-    this.loadResults()
+    console.log(localStorage.getItem('time'))
+    //this.loadResults()
   },
   
   methods: {
-    loadResults() {
-      const savedResults = localStorage.getItem('trainingResults')
-      if (savedResults) {
-        this.results = JSON.parse(savedResults)
-      } else {
-        // Если нет результатов, перенаправляем на настройки
-        this.$router.push('/task-setup')
-      }
-    },
+    //loadResults() {
+    //  const savedResults = localStorage.getItem('trainingResults')
+    //  if (savedResults) {
+    //    this.results = JSON.parse(savedResults)
+    //  } else {
+    //    // Если нет результатов, перенаправляем на настройки
+    //    this.$router.push('/task-setup')
+    //  }
+    //},
     
     startNewTraining() {
       this.$router.push('/training/start')
+    },
+    Main() {
+      this.$router.push('/')
     },
   }
 }

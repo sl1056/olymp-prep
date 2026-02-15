@@ -14,63 +14,51 @@
       
       <!-- Задания -->
       <div class="tasks-list">
-        <div 
-          v-for="(task, idx) in tasks" 
-          :key="task.id || idx"
-          class="task-card"
-        >
-          <div class="task-header">
-            <div class="task-title">
-              <span class="task-number">{{ idx + 1 }}</span>
-              <span 
-                v-if="task.difficulty"
-                :class="[
+        <div class="task-header">
+          <div class="task-title">
+            <span class="task-number">{{ taskNumber }}</span>
+            <span :class="[
                   'difficulty-badge', 
-                  task.difficulty === 1 ? 'easy' : 
-                  task.difficulty === 2 ? 'medium' : 'hard'
-                ]"
+                  currentTask?.difficulty === 'easy' ? 'easy' : 
+                  currentTask?.difficulty === 'medium' ? 'medium' : 'hard'
+                ]">{{ currentTask?.difficulty }}</span> 
+          </div>
+        </div>
+        
+        <div class="task-text">
+          {{ currentTask?.text }}
+        </div>
+        
+        <div class="task-answer">
+          <div class="answer-input-section">
+            <div class="answer-label">Введите ваш ответ:</div>
+            <div 
+              class="input-wrapper" 
+              :class="{ 
+                'saved-border': saved,
+                'error-border': error 
+              }"
+            >
+              <input 
+                type="text" 
+                v-model="answer"
+                class="answer-input"
+                :placeholder="'Введите ответ здесь...'"
+                @keyup.enter="saveTask()"
+                @input="error = false"
               >
-                {{ task.difficulty === 1 ? 'ЛЁГКАЯ' : 
-                   task.difficulty === 2 ? 'СРЕДНЯЯ' : 'СЛОЖНАЯ' }}
-              </span>
             </div>
-          </div>
-          
-          <div class="task-text">
-            {{ task.question }}
-          </div>
-          
-          <div class="task-answer">
-            <div class="answer-input-section">
-              <div class="answer-label">Введите ваш ответ:</div>
-              <div 
-                class="input-wrapper" 
-                :class="{ 
-                  'saved-border': task.saved,
-                  'error-border': task.error 
-                }"
+            <div class="action-row">
+              <button 
+                class="save-answer-btn" 
+                @click="saveTask()"
+                :disabled="!answer?.trim()"
               >
-                <input 
-                  type="text" 
-                  v-model="task.answer"
-                  class="answer-input"
-                  :placeholder="task.placeholder || 'Введите ответ здесь...'"
-                  @keyup.enter="saveTask(task)"
-                  @input="task.error = false"
-                >
-              </div>
-              <div class="action-row">
-                <button 
-                  class="save-answer-btn" 
-                  @click="saveTask(task)"
-                  :disabled="!task.answer?.trim()"
-                >
-                  Сохранить
-                </button>
-                <span v-if="task.error" class="error-message">
-                  {{ task.error }}
-                </span>
-              </div>
+                Сохранить
+              </button>
+              <span v-if="error" class="error-message">
+                {{ error }}
+              </span>
             </div>
           </div>
         </div>
@@ -86,7 +74,7 @@
           :disabled="!hasChanges"
         >
           Завершить
-          <span class="finish-count">{{ savedCount }}/{{ tasks.length }}</span>
+          <span class="finish-count">{{ savedCount }}/{{ tasksCount }}</span>
         </button>
       </div>
     </div>
@@ -95,22 +83,176 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue'
+import axios from 'axios';
 
 export default {
   name: 'TrainingPage',
   
   setup() {
+    // Реактивные переменные
+    const config = ref(null)
+    const currentTask = ref(null)
+    const answer = ref('')
+    const saved = ref(false)
+    const tasksCount = ref(0)
+    const taskNumber = ref(0)
+    const taskIndex = ref(null)
     const tasks = ref([])
-    const config = ref({
-      subject: null,
-      difficulty: null,
-      count: 0
-    })
-    
     const subjectName = ref('')
     const difficultyName = ref('')
     const isLoading = ref(false)
     const error = ref('')
+    const sessionId = ref(null)
+    const results = ref(0)
+
+    // Загружаем конфигурацию при монтировании
+    onMounted(() => {
+      loadConfig()
+    })
+
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem('created')
+        if (!raw) {
+          error.value = 'Настройки не найдены'
+          return
+        }
+        
+        const parsed = JSON.parse(raw)
+        config.value = parsed
+        
+        // Инициализируем реактивные переменные из конфига
+        sessionId.value = config.value.session_id
+        currentTask.value = config.value.task
+        tasksCount.value = config.value.total_tasks
+        taskNumber.value = config.value.current_task_index
+        taskIndex.value = config.value.task.id
+        
+        // Загружаем названия предмета и сложности
+        const subjects = {
+          math: 'МАТЕМАТИКА',
+          geom: 'ГЕОМЕТРИЯ',
+          d_math: "ДИСКРЕТНАЯ МАТЕМАТИКА",
+          phys: 'ФИЗИКА',
+          chem: 'ХИМИЯ',
+          bio: 'БИОЛОГИЯ',
+          eco: 'ЭКОЛОГИЯ',
+          geo: 'ГЕОГРАФИЯ',
+          astro: 'АСТРОНОМИЯ',
+          rus_lang: 'РУССКИЙ ЯЗЫК',
+          rus_lit: 'ЛИТЕРАТУРА',
+          eng_lang: 'АНГЛИЙСКИЙ ЯЗЫК',
+          ger_lang: 'НЕМЕЦКИЙ ЯЗЫК',
+          fr_lang: 'ФРАНЦУЗСКИЙ ЯЗЫК',
+          chi_lang: 'КИТАЙСКИЙ ЯЗЫК',
+          sp_lang: 'ИСПАНСКИЙ ЯЗЫК',
+          lat_lang: 'ЛАТИНСКИЙ ЯЗЫК',
+          hist: 'ИСТОРИЯ',
+          soc_st: 'ОБЩЕСТВОЗНАНИЕ',
+          law: 'ПРАВО',
+          econ: 'ЭКОНОМИКА',
+          fin_lit: 'ФИНАНСОВАЯ ГРАМОТНОСТЬ',
+          arts: 'ИСКУССТВО (МХК)',
+          tech: 'ТЕХНОЛОГИЯ',
+          Infinity: 'ИНФОРМАТИКА',
+          robot: 'РОБОТОТЕХНИКА',
+          ai: 'ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ',
+          pe: 'ФИЗКУЛЬТУРА',
+          obzh: 'ОБЖ'
+        }
+        
+        const difficulties = {
+          easy: 'ЛЁГКАЯ',
+          medium: 'СРЕДНЯЯ',
+          hard: 'СЛОЖНАЯ',
+          random: 'ЛЮБАЯ'
+        }
+
+        subjectName.value = subjects[parsed.subject] || 'ПРЕДМЕТ'
+        difficultyName.value = difficulties[parsed.difficulty] || 'СРЕДНЯЯ'
+        error.value = ''
+        
+        // Очищаем поле ответа для нового задания
+        answer.value = ''
+        saved.value = false
+        
+      } catch (e) {
+        error.value = 'Ошибка загрузки настроек'
+        console.error(e)
+      }
+    }
+
+    async function saveTask() {
+      if (!answer.value?.trim()) {
+        error.value = 'Введите ответ'
+        return
+      }
+
+      try {
+        isLoading.value = true
+        error.value = ''
+        
+        const token = localStorage.getItem('authToken');
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        const response = await axios.post('http://localhost:8000/api/training/submit/', {
+            'session_id': sessionId.value,
+            'task_id': taskIndex.value,
+            'answer': answer.value
+        });
+
+        // Получаем новый конфиг из ответа
+        const newConfig = response.data
+        console.log(response.data)
+        
+        if (newConfig.next_task) {
+          // Обновляем конфиг в localStorage
+          localStorage.setItem('created', JSON.stringify(newConfig))
+          
+          // Обновляем все реактивные переменные
+          config.value = newConfig
+          currentTask.value = newConfig.next_task
+          taskNumber.value = newConfig.current_task_index
+          taskIndex.value = newConfig.next_task.id
+          
+          // Очищаем поле ответа и показываем успех
+          answer.value = ''
+          saved.value = true
+          
+          // Убираем индикатор сохранения через 2 секунды
+          setTimeout(() => {
+            saved.value = false
+          }, 2000)
+        } else {
+          // Если нет следующего задания, значит тренировка завершена
+          await finish()
+        }
+
+        if (newConfig.message=='Верно!') {
+          results.value += 1
+          console.log('Correct: ',JSON.parse(JSON.stringify(results))._value)
+        }
+
+      } catch (e) {
+        error.value = e.response?.data?.error || 'Не удалось сохранить ответ'
+        console.error('Save error:', e)
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    async function finish() {
+      try {
+        localStorage.setItem('trainingResults', JSON.parse(JSON.stringify(results))._value)
+        localStorage.removeItem('created')
+        
+        // Перенаправляем на страницу результатов
+        window.location.href = '/training/result'
+      } catch (e) {
+        error.value = 'Не удалось завершить'
+        console.error(e)
+      }
+    }
 
     const savedCount = computed(() => 
       tasks.value.filter(t => t.saved).length
@@ -120,138 +262,12 @@ export default {
       savedCount.value > 0
     )
 
-    function loadConfig() {
-      try {
-        const raw = localStorage.getItem('trainingConfig')
-        if (!raw) {
-          error.value = 'Настройки не найдены'
-          return
-        }
-        
-        const parsed = JSON.parse(raw)
-        if (!parsed.subject || !parsed.difficulty) {
-          error.value = 'Неполные настройки'
-          return
-        }
-        
-        config.value = parsed
-        
-        const subjects = {
-          math: 'МАТЕМАТИКА',
-          physics: 'ФИЗИКА',
-          chemistry: 'ХИМИЯ',
-          biology: 'БИОЛОГИЯ',
-          russian: 'РУССКИЙ ЯЗЫК',
-          english: 'АНГЛИЙСКИЙ ЯЗЫК',
-          history: 'ИСТОРИЯ',
-          informatics: 'ИНФОРМАТИКА'
-        }
-        
-        const difficulties = {
-          easy: 'ЛЁГКАЯ',
-          medium: 'СРЕДНЯЯ',
-          hard: 'СЛОЖНАЯ'
-        }
-        
-        subjectName.value = subjects[parsed.subject] || 'ПРЕДМЕТ'
-        difficultyName.value = difficulties[parsed.difficulty] || 'СРЕДНЯЯ'
-        error.value = ''
-      } catch (e) {
-        error.value = 'Ошибка загрузки настроек'
-        console.error(e)
-      }
-    }
-
-    async function loadTasks() {
-      isLoading.value = true
-      error.value = ''
-      
-      try {
-        if (!config.value.count || config.value.count < 1) {
-          config.value.count = 5
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 400))
-        
-        const demo = []
-        for (let i = 0; i < config.value.count; i++) {
-          demo.push({
-            id: `task-${i}-${Date.now()}`,
-            question: `Задание ${i + 1}`,
-            difficulty: Math.floor(Math.random() * 3) + 1,
-            answer: '',
-            saved: false,
-            error: false,
-            placeholder: 'Введите ответ здесь...'
-          })
-        }
-        
-        tasks.value = demo
-      } catch (e) {
-        error.value = 'Не удалось загрузить задания'
-        console.error(e)
-        tasks.value = []
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    function saveTask(task) {
-      if (!task.answer?.trim()) {
-        task.error = 'Введите ответ'
-        return
-      }
-      
-      task.saved = true
-      task.error = false
-      
-      setTimeout(() => {
-        const index = tasks.value.findIndex(t => t.id === task.id)
-        if (index !== -1) {
-          tasks.value[index].saved = true
-        }
-      }, 100)
-    }
-
-    async function finish() {
-      try {
-        const results = {
-          config: config.value,
-          results: {
-            total: tasks.value.length,
-            saved: savedCount.value,
-            tasks: tasks.value.map(t => ({
-              id: t.id,
-              answer: t.answer,
-              saved: t.saved
-            }))
-          },
-          timestamp: new Date().toISOString()
-        }
-        
-        localStorage.setItem('trainingResults', JSON.stringify(results))
-        localStorage.removeItem('trainingConfig')
-        
-        setTimeout(() => {
-          window.location.href = '/training/result'
-        }, 200)
-      } catch (e) {
-        error.value = 'Не удалось завершить'
-        console.error(e)
-      }
-    }
-
-    onMounted(() => {
-      loadConfig()
-      
-      setTimeout(() => {
-        if (tasks.value.length === 0) {
-          loadTasks()
-        }
-      }, 200)
-    })
-
     return {
+      currentTask,
+      answer,
+      saved,
+      tasksCount,
+      taskNumber,
       tasks,
       subjectName,
       difficultyName,
@@ -432,10 +448,6 @@ export default {
   width: 100%;
   border-radius: 10px;
   transition: all 0.3s;
-}
-
-.input-wrapper.saved-border {
-  box-shadow: 0 0 0 3px #a5d6a5;
 }
 
 .input-wrapper.error-border {
