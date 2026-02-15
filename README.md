@@ -6,4 +6,4 @@
 #2. Перейдите в папку backend\
 #3. Запустите докер: docker compose --up build\
 #4. Перейдите в папку frontend\
-#5. Запустите npm: npm run dev\
+#5. Запустите npm: npm run dev
