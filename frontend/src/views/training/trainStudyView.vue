@@ -68,6 +68,7 @@
         <div v-if="error" class="error-banner">
           {{ error }}
         </div>
+          <span class="finish-count">{{ taskNumber }}/{{ tasksCount }}</span>
       </div>
     </div>
   </div>
@@ -195,6 +196,11 @@ export default {
 
         // Получаем новый конфиг из ответа
         const newConfig = response.data
+        if (newConfig.message=='Верно!') {
+            results.value += 1
+            localStorage.setItem('trainingResults', JSON.parse(JSON.stringify(results))._value)
+            console.log('Correct: ',JSON.parse(JSON.stringify(results))._value)
+        }
         console.log(response.data)
         
         if (newConfig.next_task) {
@@ -217,12 +223,7 @@ export default {
           }, 2000)
         } else {
           // Если нет следующего задания, значит тренировка завершена
-          await finish()
-        }
-
-        if (newConfig.message=='Верно!') {
-          results.value += 1
-          console.log('Correct: ',JSON.parse(JSON.stringify(results))._value)
+          finish()
         }
 
       } catch (e) {
@@ -235,7 +236,6 @@ export default {
 
     async function finish() {
       try {
-        localStorage.setItem('trainingResults', JSON.parse(JSON.stringify(results))._value)
         localStorage.removeItem('created')
         
         // Перенаправляем на страницу результатов

@@ -186,7 +186,7 @@ export default {
     startNewTraining() {
       this.$router.push('/training/start')
     },
-    Main() {
+    MainPage() {
       this.$router.push('/')
     },
   }

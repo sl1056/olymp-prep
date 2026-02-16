@@ -16,18 +16,18 @@
 
       <div class="achievements-grid">
         <div 
-          v-for="item in achievementsList" 
+          v-for="item in this.achievementsList" 
           :key="item.id"
           class="achievement-card" 
           :class="{ 'achievement-card-done': item.completed }"
         >
           <div class="card-header">
             <div class="icon-wrapper" :style="{ background: item.bgColor + '20' }">
-              <i :class="item.icon" :style="{ color: item.bgColor }"></i>
+              <a :class="item.icon" :style="{ color: item.bgColor }">{{ item.icon }}</a>
             </div>
-            <div class="status-badge" :class="item.completed ? 'status-done' : (item.currentCount > 0 ? 'status-working' : 'status-waiting')">
-              <i :class="item.completed ? 'fas fa-check-circle' : (item.currentCount > 0 ? 'fas fa-spinner' : 'fas fa-lock')"></i>
-              <span>{{ item.completed ? 'Выполнено' : (item.currentCount > 0 ? 'В процессе' : 'Закрыто') }}</span>
+            <div class="status-badge" :class="item.status=='earned' ? 'status-done' : (item.status=='in_progress' ? 'status-working' : 'status-waiting')">
+              <i :class="item.status=='earned' ? 'fas fa-check-circle' : (item.status=='in_progress'? 'fas fa-spinner' : 'fas fa-lock')"></i>
+              <span>{{ item.status=='earned' ? 'Выполнено' : (item.status=='in_progress' ? 'В процессе' : 'Закрыто') }}</span>
             </div>
           </div>
 
@@ -37,15 +37,15 @@
           <div class="progress-section">
             <div class="progress-info">
               <span class="progress-text">
-                {{ item.currentCount }}/{{ item.totalCount }}
+                {{ item.progress.solved }}/{{ item.progress.needed }}
               </span>
-              <span class="progress-percent">{{ Math.floor((item.currentCount / item.totalCount) * 100) }}%</span>
+              <span class="progress-percent">{{ Math.floor((item.progress.solved / item.progress.needed) * 100) }}%</span>
             </div>
             <div class="progress-bar">
               <div 
                 class="progress-fill" 
                 :style="{ 
-                  width: (item.currentCount / item.totalCount) * 100 + '%',
+                  width: (item.progress.solved / item.progress.needed) * 100 + '%',
                   background: item.completed ? '#06D6A0' : '#4A7B9D'
                 }"
               ></div>
@@ -65,7 +65,8 @@
 </template>
 
 <script>
-import HeaderEnter from '@/components/HeaderEnter.vue'
+import HeaderEnter from '@/components/HeaderEnter.vue';
+import axios from 'axios';
 
 export default {
   name: 'AchievementsPage',
@@ -73,374 +74,93 @@ export default {
 
   data() {
     return {
-      achievementsList: []
+      achievementsList: [],
     }
   },
 
   mounted() {
     this.loadAchievementsData()
-    this.loadSavedProgress()
+    //this.loadSavedProgress()
     
     // тут потом надо будет добавить нормальную обработку ошибок
     console.log('страница загружена')
   },
 
   methods: {
-    loadAchievementsData() {
-      this.achievementsList = [
-        // МАТЕМАТИКА
-        { 
-          id: 1, 
-          title: 'Юный математик', 
-          icon: 'fas fa-square-root-alt', 
-          bgColor: '#4A7B9D', 
-          description: 'Решить 50 задач по математике', 
-          difficultyLevel: 'Начинающий', 
-          completed: false, 
-          currentCount: 34, 
-          totalCount: 50 
-        },
-        { 
-          id: 2, 
-          title: 'Опытный математик', 
-          icon: 'fas fa-calculator', 
-          bgColor: '#4A7B9D', 
-          description: 'Решить 100 задач по математике', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 67, 
-          totalCount: 100 
-        },
-        
-        // ФИЗИКА
-        { 
-          id: 3, 
-          title: 'Юный физик', 
-          icon: 'fas fa-atom', 
-          bgColor: '#EF476F', 
-          description: 'Решить 30 задач по физике', 
-          difficultyLevel: 'Начинающий', 
-          completed: true, 
-          currentCount: 30, 
-          totalCount: 30 
-        },
-        { 
-          id: 4, 
-          title: 'Опытный физик', 
-          icon: 'fas fa-microscope', 
-          bgColor: '#EF476F', 
-          description: 'Решить 60 задач по физике', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 42, 
-          totalCount: 60 
-        },
-        
-        // ХИМИЯ
-        { 
-          id: 5, 
-          title: 'Юный химик', 
-          icon: 'fas fa-flask', 
-          bgColor: '#FF9E6D', 
-          description: 'Решить 30 задач по химии', 
-          difficultyLevel: 'Начинающий', 
-          completed: false, 
-          currentCount: 25, 
-          totalCount: 30 
-        },
-        { 
-          id: 6, 
-          title: 'Опытный химик', 
-          icon: 'fas fa-vial', 
-          bgColor: '#FF9E6D', 
-          description: 'Решить 60 задач по химии', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 31, 
-          totalCount: 60 
-        },
-        
-        // ИНФОРМАТИКА
-        { 
-          id: 7, 
-          title: 'Юный программист', 
-          icon: 'fas fa-code', 
-          bgColor: '#118AB2', 
-          description: 'Решить 30 задач по информатике', 
-          difficultyLevel: 'Начинающий', 
-          completed: false, 
-          currentCount: 30, 
-          totalCount: 30 
-        },
-        { 
-          id: 8, 
-          title: 'Опытный программист', 
-          icon: 'fas fa-laptop-code', 
-          bgColor: '#118AB2', 
-          description: 'Решить 60 задач по информатике', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 45, 
-          totalCount: 60 
-        },
-        
-        // БИОЛОГИЯ
-        { 
-          id: 9, 
-          title: 'Юный биолог', 
-          icon: 'fas fa-dove', 
-          bgColor: '#06D6A0', 
-          description: 'Решить 30 задач по биологии', 
-          difficultyLevel: 'Начинающий', 
-          completed: false, 
-          currentCount: 28, 
-          totalCount: 30 
-        },
-        { 
-          id: 10, 
-          title: 'Опытный биолог', 
-          icon: 'fas fa-dna', 
-          bgColor: '#06D6A0', 
-          description: 'Решить 60 задач по биологии', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 35, 
-          totalCount: 60 
-        },
-        
-        // ИСТОРИЯ
-        { 
-          id: 11, 
-          title: 'Юный историк', 
-          icon: 'fas fa-landmark', 
-          bgColor: '#F1C40F', 
-          description: 'Решить 30 задач по истории', 
-          difficultyLevel: 'Начинающий', 
-          completed: true, 
-          currentCount: 30, 
-          totalCount: 30 
-        },
-        { 
-          id: 12, 
-          title: 'Опытный историк', 
-          icon: 'fas fa-scroll', 
-          bgColor: '#F1C40F', 
-          description: 'Решить 60 задач по истории', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 52, 
-          totalCount: 60 
-        },
-        
-        // ЛИТЕРАТУРА
-        { 
-          id: 13, 
-          title: 'Юный литератор', 
-          icon: 'fas fa-book-open', 
-          bgColor: '#9B59B6', 
-          description: 'Решить 30 задач по литературе', 
-          difficultyLevel: 'Начинающий', 
-          completed: false, 
-          currentCount: 22, 
-          totalCount: 30 
-        },
-        { 
-          id: 14, 
-          title: 'Опытный литератор', 
-          icon: 'fas fa-feather', 
-          bgColor: '#9B59B6', 
-          description: 'Решить 60 задач по литературе', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 38, 
-          totalCount: 60 
-        },
-        
-        // ГЕОГРАФИЯ
-        { 
-          id: 15, 
-          title: 'Юный географ', 
-          icon: 'fas fa-globe', 
-          bgColor: '#2E86C1', 
-          description: 'Решить 30 задач по географии', 
-          difficultyLevel: 'Начинающий', 
-          completed: false, 
-          currentCount: 19, 
-          totalCount: 30 
-        },
-        { 
-          id: 16, 
-          title: 'Опытный географ', 
-          icon: 'fas fa-map', 
-          bgColor: '#2E86C1', 
-          description: 'Решить 60 задач по географии', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 27, 
-          totalCount: 60 
-        },
-        
-        // АНГЛИЙСКИЙ
-        { 
-          id: 17, 
-          title: 'Юный лингвист', 
-          icon: 'fas fa-language', 
-          bgColor: '#E67E22', 
-          description: 'Решить 30 задач по английскому', 
-          difficultyLevel: 'Начинающий', 
-          completed: true, 
-          currentCount: 30, 
-          totalCount: 30 
-        },
-        { 
-          id: 18, 
-          title: 'Опытный лингвист', 
-          icon: 'fas fa-font', 
-          bgColor: '#E67E22', 
-          description: 'Решить 60 задач по английскому', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 48, 
-          totalCount: 60 
-        },
-        
-        // ОБЩЕСТВОЗНАНИЕ
-        { 
-          id: 19, 
-          title: 'Юный обществовед', 
-          icon: 'fas fa-users', 
-          bgColor: '#16A085', 
-          description: 'Решить 30 задач по обществознанию', 
-          difficultyLevel: 'Начинающий', 
-          completed: false, 
-          currentCount: 26, 
-          totalCount: 30 
-        },
-        { 
-          id: 20, 
-          title: 'Опытный обществовед', 
-          icon: 'fas fa-gavel', 
-          bgColor: '#16A085', 
-          description: 'Решить 60 задач по обществознанию', 
-          difficultyLevel: 'Средний', 
-          completed: false, 
-          currentCount: 33, 
-          totalCount: 60 
-        },
-        
-        // ГЛОБАЛЬНЫЕ ДОСТИЖЕНИЯ
-        { 
-          id: 21, 
-          title: 'Эрудит', 
-          icon: 'fas fa-graduation-cap', 
-          bgColor: '#8E44AD', 
-          description: 'Решить 100 задач по разным предметам', 
-          difficultyLevel: 'Средний', 
-          completed: true, 
-          currentCount: 100, 
-          totalCount: 100 
-        },
-        { 
-          id: 22, 
-          title: 'Полиглот', 
-          icon: 'fas fa-globe-americas', 
-          bgColor: '#8E44AD', 
-          description: 'Решить 50 задач по иностранным языкам', 
-          difficultyLevel: 'Сложный', 
-          completed: false, 
-          currentCount: 32, 
-          totalCount: 50 
-        },
-        { 
-          id: 23, 
-          title: 'Олимпиадник', 
-          icon: 'fas fa-trophy', 
-          bgColor: '#F39C12', 
-          description: 'Решить 500 задач по всем предметам', 
-          difficultyLevel: 'Эксперт', 
-          completed: false, 
-          currentCount: 267, 
-          totalCount: 500 
-        },
-        { 
-          id: 24, 
-          title: 'Гранд-мастер', 
-          icon: 'fas fa-crown', 
-          bgColor: '#F39C12', 
-          description: 'Решить 1000 задач по всем предметам', 
-          difficultyLevel: 'Эксперт', 
-          completed: false, 
-          currentCount: 412, 
-          totalCount: 1000 
-        }
-      ]
-    },
-
-    loadSavedProgress() {
-      const savedData = localStorage.getItem('user_achievements_progress')
-      
-      if (!savedData) {
-        return
-      }
-      
-      try {
-        const parsedData = JSON.parse(savedData)
-        
-        for (let i = 0; i < this.achievementsList.length; i++) {
-          const achievement = this.achievementsList[i]
-          
-          for (let j = 0; j < parsedData.length; j++) {
-            const savedItem = parsedData[j]
-            
-            if (achievement.id === savedItem.id) {
-              // Не перезаписываем выполненные достижения
-              if (!achievement.completed) {
-                achievement.currentCount = savedItem.currentCount
-                achievement.completed = savedItem.completed
+    async loadAchievementsData() {
+        try {
+            const token = localStorage.getItem('authToken')
+            const response = await axios.get('http://localhost:8000/api/badges/', {
+              headers: {
+                'Authorization': `Bearer ${token}`
               }
-              break
-            }
-          }
+            })
+            this.achievementsList = response.data
+            console.log(response.data)
+
+        } catch (err) {
+            this.errorMessage = err.response?.data?.detail || 'Ошибка';
+        } finally {
+            this.isLoading = false;
         }
-        
-        console.log('прогресс загружен')
-      } catch (error) {
-        console.warn('ошибка при загрузке прогресса', error)
-      }
     },
 
-    saveProgressToStorage() {
-      const progressData = []
-      
-      for (let i = 0; i < this.achievementsList.length; i++) {
-        const achievement = this.achievementsList[i]
-        
-        progressData.push({
-          id: achievement.id,
-          currentCount: achievement.currentCount,
-          completed: achievement.completed
-        })
-      }
-      
-      try {
-        localStorage.setItem(
-          'user_achievements_progress', 
-          JSON.stringify(progressData)
-        )
-      } catch (error) {
-        console.warn('ошибка при сохранении прогресса', error)
-      }
-    }
+    //loadSavedProgress() {
+    //  const savedData = localStorage.getItem('user_achievements_progress')
+    //  
+    //  if (!savedData) {
+    //    return
+    //  }
+    //  
+    //  try {
+    //    const parsedData = JSON.parse(savedData)
+    //    
+    //    for (let i = 0; i < this.achievementsList.length; i++) {
+    //      const achievement = this.achievementsList[i]
+    //      
+    //      for (let j = 0; j < parsedData.length; j++) {
+    //        const savedItem = parsedData[j]
+    //        
+    //        if (achievement.id === savedItem.id) {
+    //          // Не перезаписываем выполненные достижения
+    //          if (!achievement.completed) {
+    //            achievement.currentCount = savedItem.currentCount
+    //            achievement.completed = savedItem.completed
+    //          }
+    //          break
+    //        }
+    //      }
+    //    }
+    //    
+    //    console.log('прогресс загружен')
+    //  } catch (error) {
+    //    console.warn('ошибка при загрузке прогресса', error)
+    //  }
+    //},
+//
+    //saveProgressToStorage() {
+    //  const progressData = []
+    //  
+    //  for (let i = 0; i < this.achievementsList.length; i++) {
+    //    const achievement = this.achievementsList[i]
+    //    
+    //    progressData.push({
+    //      id: achievement.id,
+    //      currentCount: achievement.currentCount,
+    //      completed: achievement.completed
+    //    })
+    //  }
+    //  
+    //  try {
+    //    localStorage.setItem(
+    //      'user_achievements_progress', 
+    //      JSON.stringify(progressData)
+    //    )
+    //  } catch (error) {
+    //    console.warn('ошибка при сохранении прогресса', error)
+    //  }
+    //}
   },
-
-  watch: {
-    achievementsList: {
-      handler: function() {
-        this.saveProgressToStorage()
-      },
-      deep: true
-    }
-  }
 }
 </script>
 

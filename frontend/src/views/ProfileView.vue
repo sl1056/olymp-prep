@@ -17,28 +17,24 @@
           <div class="user-info">
             <div class="name-section">
               <h1 class="user-name">{{ userData?.username }}</h1>
-              <button class="edit-btn" @click="openEditModal" title="Редактировать имя">
-                <i class="fas fa-edit"></i>
-              </button>
             </div>
-            <div class="user-id">ID: 2562341</div>
           </div>
         </div>
         
         <div class="profile-content">
           <div class="stats-grid">
             <div class="stat-card">
-              <div class="stat-number">91</div>
+              <div class="stat-number">{{ statistics?.total_attempts }}</div>
               <div class="stat-label">Выполнено тестов</div>
             </div>
             
             <div class="stat-card">
-              <div class="stat-number percentage">87%</div>
+              <div class="stat-number percentage">{{statistics?.accuracy_percent}}%</div>
               <div class="stat-label">Правильных тестов</div>
             </div>
             
             <div class="stat-card">
-              <div class="stat-number">181</div>
+              <div class="stat-number">0</div>
               <div class="stat-label">Сражений в PvP</div>
             </div>
           </div>
@@ -133,6 +129,7 @@ export default {
   setup() {
     const router = useRouter()
     
+    const statistics = ref(null)
     const userData = ref(null)
     const isLoading = ref(true)
     const isModalOpen = ref(false)
@@ -208,6 +205,30 @@ export default {
       closeEditModal()
     }
     
+    const getAnalytics = async () => {
+      try {
+        const token = localStorage.getItem('authToken')
+        if (!token) {
+          router.push('/auth')
+          return
+        }
+        
+        console.log(token);
+
+        const response = await axios.get('http://localhost:8000/api/analytics/overall/', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        statistics.value = response.data;
+        console.log(statistics.value);
+
+      } catch (err) {
+        console.error('Ошибка при загрузке статистики пользователя:', err)
+      } 
+    }
+
     const goToFullStats = () => {
       router.push('/profile/stats')
     }
@@ -231,6 +252,7 @@ export default {
         })
         
         userData.value = response.data
+        console.log(userData.value)
 
       } catch (err) {
         console.error('Ошибка при загрузке данных пользователя:', err)
@@ -247,9 +269,11 @@ export default {
     
     onMounted(() => {
       fetchUserData()
+      getAnalytics()
     })
     
     return {
+      statistics,
       userData,
       isLoading,
       isModalOpen,
