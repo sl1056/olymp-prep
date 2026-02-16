@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
+from analytics.models import TaskAttempt  
 from .models import Task
 from .serializers import TaskSerializer
 from analytics.models import TaskAttempt
@@ -41,15 +42,15 @@ class SubmitTaskView(APIView):
             )
 
         task = get_object_or_404(Task, id=task_id)
-        profile = request.user.profile
-
         is_correct = (user_answer == task.correct_answer.strip())
 
 
+        profile = request.user.profile
         profile.solved_tasks += 1
         if is_correct:
             profile.correct_answers += 1
         profile.save()
+
 
         TaskAttempt.objects.create(
             user=request.user,
@@ -60,7 +61,6 @@ class SubmitTaskView(APIView):
         )
 
         message = "Верно!" if is_correct else "Неверно."
-
         return Response({
             "correct": is_correct,
             "message": message
