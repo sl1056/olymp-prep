@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'import_export',
     'users.apps.UsersConfig',
     'tasks.apps.TasksConfig',
+    'badges',
     'channels',
     'pvp.apps.PvpConfig',
     'analytics.apps.AnalyticsConfig',
