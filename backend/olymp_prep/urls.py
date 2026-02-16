@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/analytics/', include('analytics.urls')),
     path('api/training/', include('training.urls')),
     path('api/', include('badges.urls')),
+    path('api/admin/', include('admin_panel.urls')),
 ]
