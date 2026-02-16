@@ -43,11 +43,16 @@
             </div>
           </div>
           
-          <!-- Кнопка полной статистики -->
+          <!-- Кнопка полной статистики и достижений -->
           <div class="full-stats-section">
-            <button class="full-stats-btn" @click="goToFullStats">
-              <i class="fas fa-chart-bar"></i> Полная статистика
-            </button>
+            <div class="stats-buttons-row">
+              <button class="full-stats-btn" @click="goToFullStats">
+                <i class="fas fa-chart-bar"></i> Полная статистика
+              </button>
+              <button class="full-stats-btn" @click="goToAchievements">
+                <i class="fas fa-trophy"></i> Достижения
+              </button>
+            </div>
           </div>
           
           <div class="info-section">
@@ -121,6 +126,9 @@ export default {
     goToFullStats() {
       this.$router.push('/profile/stats')
     },
+    goToAchievements() {
+      this.$router.push('/profile/achievements')
+    }
   },
   setup() {
     const router = useRouter()
@@ -158,7 +166,6 @@ export default {
       return userData.value?.username?.charAt(0)?.toUpperCase() || '?'
     })
     
-    // ИСПРАВЛЕНО: только дата, без времени
     const formattedDate = computed(() => {
       if (!userData.value?.created_at) return 'Не указана'
       
@@ -203,6 +210,10 @@ export default {
     
     const goToFullStats = () => {
       router.push('/profile/stats')
+    }
+    
+    const goToAchievements = () => {
+      router.push('/profile/achievements')
     }
     
     const fetchUserData = async () => {
@@ -257,7 +268,6 @@ export default {
 </script>
 
 <style scoped>
-/* Стили полностью без изменений, оставлены как в оригинале */
 html, body {
   overflow-x: hidden;
   width: 100%;
@@ -420,14 +430,19 @@ html, body {
   font-family: 'Inter', sans-serif;
 }
 
-/* Секция полной статистики */
 .full-stats-section {
   margin-bottom: 40px;
   text-align: center;
 }
 
-.full-stats-btn {
+.stats-buttons-row {
+  display: flex;
+  gap: 15px;
   width: 100%;
+}
+
+.full-stats-btn {
+  flex: 1;
   padding: 20px;
   background: linear-gradient(135deg, #4A7B9D 0%, #224762 100%);
   color: white;
@@ -441,7 +456,7 @@ html, body {
   justify-content: center;
   gap: 15px;
   transition: all 0.3s ease;
-  font-family: 'Anonymous Pro', monospace;
+  font-family: 'Inter', sans-serif;
   box-shadow: 0 8px 20px rgba(74, 123, 157, 0.2);
 }
 
@@ -520,7 +535,7 @@ html, body {
   justify-content: center;
   gap: 12px;
   transition: all 0.3s ease;
-  font-family: 'Anonymous Pro', monospace;
+  font-family: 'Inter', sans-serif;
 }
 
 .logout-btn:hover {
@@ -542,7 +557,6 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  animation: fadeIn 0.3s ease;
 }
 
 .modal {
@@ -552,7 +566,6 @@ html, body {
   width: 100%;
   max-width: 500px;
   box-shadow: 0 30px 60px rgba(34, 71, 98, 0.15);
-  animation: slideUp 0.3s ease;
   font-family: 'Inter', sans-serif;
 }
 
@@ -642,21 +655,5 @@ html, body {
 
 .modal-btn.secondary:hover {
   background: #F0EBE2;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 </style>

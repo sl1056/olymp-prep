@@ -73,6 +73,11 @@ const router = createRouter({
       component: () => import('../PvP/pvpAnswer.vue'),
     },
     {
+      path: '/profile/achievements',
+      name: 'achievements',
+      component: () => import('../views/AchievView.vue'),
+    },
+    {
       path: '/PvP/Result',
       name: 'result',
       component: () => import('../PvP/pvpResult.vue'),
