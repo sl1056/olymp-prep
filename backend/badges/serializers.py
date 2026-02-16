@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from analytics.models import TaskAttempt
 from .models import Badge, UserBadge
 
 class BadgeSerializer(serializers.ModelSerializer):

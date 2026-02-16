@@ -9,7 +9,7 @@ class UserBadgesAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        badges = Badge.objects.all() 
+        badges = Badge.objects.all()
         serializer = BadgeProgressSerializer(
             badges,
             many=True,
