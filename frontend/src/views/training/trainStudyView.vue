@@ -68,14 +68,6 @@
         <div v-if="error" class="error-banner">
           {{ error }}
         </div>
-        <button 
-          class="finish-btn" 
-          @click="finish"
-          :disabled="!hasChanges"
-        >
-          Завершить
-          <span class="finish-count">{{ savedCount }}/{{ tasksCount }}</span>
-        </button>
       </div>
     </div>
   </div>
