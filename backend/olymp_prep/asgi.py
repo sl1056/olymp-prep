@@ -1,7 +1,4 @@
 <<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 """
 ASGI config for olymp_prep project.
 
@@ -20,15 +17,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "olymp_prep.settings")
 
 application = get_asgi_application()
 =======
-=======
-import os
->>>>>>> Stashed changes
-=======
-import os
->>>>>>> Stashed changes
-=======
-import os
->>>>>>> Stashed changes
 =======
 import os
 >>>>>>> Stashed changes
