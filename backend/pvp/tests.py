@@ -190,6 +190,9 @@ class PvpApiTests(APITestCase):
         self.assertEqual(with_token_join.data['status'], 'active')
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

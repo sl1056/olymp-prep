@@ -7,6 +7,7 @@ from tasks.models import Task
 
 
 
+
 class Match(models.Model):
     STATUS_CHOICES = [
         ('waiting', 'Ожидание второго игрока'),
@@ -70,6 +71,9 @@ class QuizRoom(models.Model):
         return f"Match {self.id}: {self.player1.username} vs {p2}"
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
