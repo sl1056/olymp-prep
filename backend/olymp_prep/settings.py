@@ -33,7 +33,10 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'daphne',
+<<<<<<< Updated upstream
     'channels',
+=======
+>>>>>>> Stashed changes
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -149,7 +152,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -158,9 +162,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CHANNEL_LAYERS = {
     "default": {
+<<<<<<< Updated upstream
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [("127.0.0.1", 6379)],
         },
     },
 }
+=======
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+>>>>>>> Stashed changes

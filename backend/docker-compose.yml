@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: olymp_web
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && daphne -b 0.0.0.0 -p 8000 olymp_prep.asgi:application"
     volumes:
       - .:/app
     ports:
