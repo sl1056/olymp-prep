@@ -9,8 +9,6 @@ const app = createApp(App)
 
 app.use(router)
 
-app.mount('#app')
-
 axios.interceptors.request.use(
     config => {
         const token = localStorage.getItem('authToken');
@@ -23,3 +21,5 @@ axios.interceptors.request.use(
         return Promise.reject(error);
     }
 );
+
+app.mount('#app')

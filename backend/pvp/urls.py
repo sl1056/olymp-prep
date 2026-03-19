@@ -3,6 +3,9 @@ from .views import CreateMatchView, JoinMatchView, MatchStatusView
 
 urlpatterns = [
     path('create/', CreateMatchView.as_view(), name='create-match'),
+    path('create', CreateMatchView.as_view()),
     path('join/<int:match_id>/', JoinMatchView.as_view(), name='join-match'),
+    path('join/<int:match_id>', JoinMatchView.as_view()),
     path('status/<int:match_id>/', MatchStatusView.as_view(), name='match-status'),
+    path('status/<int:match_id>', MatchStatusView.as_view()),
 ]

@@ -22,19 +22,19 @@
                     <div class="features-list">
                         <div class="feature-item">
                             <span class="feature-marker">-</span>
-                            <span class="feature-text">выпустили 1000 учеников</span>
+                            <span class="feature-text">Подготовили <b>30000+</b> учеников</span>
                         </div>
                         <div class="feature-item">
                             <span class="feature-marker">-</span>
-                            <span class="feature-text">подготовили 30000 учеников</span>
+                            <span class="feature-text">Остались довольны <b>99%</b> пользователей</span>
                         </div>
                         <div class="feature-item">
                             <span class="feature-marker">-</span>
-                            <span class="feature-text">20+ наших учеников стали призерами</span>
+                            <span class="feature-text">Призерами стали <b>75%</b> наших учеников</span>
                         </div>
                         <div class="feature-item">
                             <span class="feature-marker">-</span>
-                            <span class="feature-text">2500+ наших учеников стали участниками</span>
+                            <span class="feature-text">Победителями стали <b>20%</b> наших учеников</span>
                         </div>
                     </div>
                 </div>
@@ -46,11 +46,10 @@
 <script>
 export default {
     name: "Info",
-
     methods: {
         goToHome() {
             this.$router.push('/');
-        },
+        }
     }
 }
 </script>
@@ -72,7 +71,6 @@ export default {
     position: relative;
 }
 
-/* Надо придумать что-то с кнопкой */
 .vincere-button.home-button {
     font-family: "Alexandria", sans-serif;
     background-color: #224762;
@@ -83,7 +81,7 @@ export default {
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
     box-shadow: 0 6px 20px rgba(34, 71, 98, 0.25);
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -95,7 +93,6 @@ export default {
     align-items: center;
     gap: 10px;
     border: 2px solid rgba(255, 255, 255, 0.1);
-    overflow: hidden;
 }
 
 .home-icon {
@@ -110,93 +107,21 @@ export default {
     z-index: 2;
 }
 
-
 .vincere-button.home-button:hover {
     background-color: #1B3A50;
-    transform: translateY(-1px) scale(1.05);
-}
-
-
-@media (max-width: 768px) {
-    .vincere-button.home-button {
-        position: fixed;
-        top: 15px;
-        right: 15px;
-        padding: 10px 20px 10px 16px;
-        font-size: 14px;
-        letter-spacing: 0.5px;
-        gap: 8px;
-        border-radius: 40px;
-        box-shadow: 0 4px 15px rgba(34, 71, 98, 0.25);
-        z-index: 1001;
-    }
-    
-    .home-icon {
-        width: 18px;
-        height: 18px;
-    }
-    
-    .info-container {
-        padding-top: 70px;
-    }
-    
-    .vincere-button.home-button:active {
-        transform: scale(0.95);
-    }
-    
-    .vincere-button.home-button:hover {
-        transform: translateY(-2px);
-    }
-}
-
-@media (max-width: 480px) {
-    .vincere-button.home-button {
-        top: 10px;
-        right: 10px;
-        padding: 8px 16px 8px 12px;
-        font-size: 12px;
-        gap: 6px;
-    }
-    
-    .home-icon {
-        width: 16px;
-        height: 16px;
-    }
-    
-    .button-text {
-        display: none;
-    }
-    
-    .vincere-button.home-button {
-        width: 45px;
-        height: 45px;
-        padding: 0;
-        justify-content: center;
-        border-radius: 50%;
-    }
-    
-    .home-icon {
-        width: 20px;
-        height: 20px;
-    }
-    
-    .info-container {
-        padding-top: 60px;
-    }
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(34, 71, 98, 0.35);
 }
 
 .info-card {
-    width: 100%;
-    max-width: 731px;
+    width: 731px;
     height: 749px;
     background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
     border-radius: 24px;
     padding: 40px;
     box-shadow: 
         0 20px 40px rgba(0, 0, 0, 0.08),
-        0 8px 16px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-        
+        0 8px 16px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.06);
     display: flex;
     flex-direction: column;
@@ -245,6 +170,7 @@ export default {
     color: #1a202c;
     letter-spacing: -0.5px;
     margin-top: 0;
+    text-align: center;
 }
 
 .highlight {
@@ -326,6 +252,28 @@ export default {
     .nasa-logo {
         height: 70px;
     }
+    
+    .vincere-button.home-button {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        padding: 10px 20px 10px 16px;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+        gap: 8px;
+        border-radius: 40px;
+        box-shadow: 0 4px 15px rgba(34, 71, 98, 0.25);
+        z-index: 1001;
+    }
+    
+    .home-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .info-container {
+        padding-top: 70px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -347,6 +295,40 @@ export default {
     
     .feature-item {
         padding: 10px 15px;
+    }
+    
+    .vincere-button.home-button {
+        top: 10px;
+        right: 10px;
+        padding: 8px 16px 8px 12px;
+        font-size: 12px;
+        gap: 6px;
+    }
+    
+    .home-icon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .button-text {
+        display: none;
+    }
+    
+    .vincere-button.home-button {
+        width: 45px;
+        height: 45px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    
+    .home-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .info-container {
+        padding-top: 60px;
     }
 }
 </style>

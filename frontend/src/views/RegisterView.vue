@@ -214,7 +214,6 @@ export default {
 }
 
 .right-panel {
-    margin-left: -5%;
     flex: 1;
     max-width: 480px;
 }

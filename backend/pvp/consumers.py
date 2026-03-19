@@ -1,130 +1,73 @@
 import json
-from datetime import timedelta
+import logging
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
-from django.contrib.auth import get_user_model
+from django.db import transaction
 
-# Импорты из ваших файлов
 from .models import Match
-<<<<<<< Updated upstream
-from .serializers import MatchSerializer
-from elo import calculate_elo
-=======
 from .elo import calculate_elo
-from users.models import Profile
-from tasks.models import Task
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
-User = get_user_model()
+logger = logging.getLogger(__name__)
+
 
 class MatchConsumer(AsyncJsonWebsocketConsumer):
+
     async def connect(self):
+
         self.match_id = self.scope['url_route']['kwargs']['match_id']
-        self.room_group_name = f'match_{self.match_id}'
+        self.group_name = f'match_{self.match_id}'
         self.user = self.scope['user']
 
-        # Проверка авторизации
         if not self.user.is_authenticated:
             await self.close()
             return
 
-        # Проверка доступа к матчу
-        is_participant = await self.check_participation(self.match_id, self.user)
+        is_participant = await self.check_participation(self.match_id, self.user.id)
         if not is_participant:
             await self.close()
             return
 
         await self.channel_layer.group_add(
-            self.room_group_name,
+            self.group_name,
             self.channel_name
         )
+
         await self.accept()
 
-        # Отправляем текущее состояние матча при подключении
-        match_data = await self.get_match_state()
-        await self.send_json({
-            'type': 'match_state',
-            'data': match_data
-        })
-        
-        # Уведомляем оппонента (группу) о подключении игрока
+
         await self.channel_layer.group_send(
-            self.room_group_name,
+            self.group_name,
             {
-                'type': 'player_update',
-                'message': f'Игрок {self.user.username} подключился'
+                'type': 'player_joined',
+                'user_id': self.user.id,
+                'username': self.user.username
             }
         )
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
-            self.room_group_name,
+            self.group_name,
             self.channel_name
         )
 
-    # Обработка сообщений от WebSocket клиента
+
+
     async def receive_json(self, content):
         command = content.get('command')
-        
+
         if command == 'submit_answer':
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-            answer_text = content.get('answer')
+            answer_text = content.get('answer', '').strip()
             if answer_text:
                 await self.handle_answer_submission(answer_text)
-=======
-            answer_text = content.get('answer', '')
-            await self.handle_answer_submission(answer_text)
->>>>>>> Stashed changes
-=======
-            answer_text = content.get('answer', '')
-            await self.handle_answer_submission(answer_text)
->>>>>>> Stashed changes
 
-    # Обработка отправки ответа
-    async def handle_answer_submission(self, answer_text):
-        match = await self.get_match_instance()
-        
-        # Если матч уже завершен или отменен, игнорируем
-        if match.status in ['finished', 'cancelled']:
-            await self.send_json({'error': 'Матч уже завершен'})
-            return
 
-        # Сохраняем ответ
-        match_finished, p1_ready, p2_ready = await self.save_answer_to_db(match, answer_text)
 
-        # Уведомляем игроков, что один из них ответил (скрывая ответ)
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'answer_submitted',
-                'user_id': self.user.id
-            }
-        )
-
-        # Если оба ответили, завершаем матч и считаем ELO
-        if match_finished:
-            elo_results = await self.finalize_match_logic(match.id)
-            
-            # Рассылаем финальный результат
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'match_finished',
-                    'data': elo_results
-                }
-            )
-
-    # --- Handlers для group_send ---
-
-    async def player_update(self, event):
+    async def player_joined(self, event):
         await self.send_json({
-            'type': 'player_update',
-            'message': event['message']
+            'type': 'player_joined',
+            'user_id': event['user_id'],
+            'username': event['username']
         })
 
     async def answer_submitted(self, event):
@@ -139,13 +82,7 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
             'results': event['data']
         })
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    # --- Database Sync Methods ---
-=======
-=======
->>>>>>> Stashed changes
-    async def next_question(self, event):
+    async def question_changed(self, event):
         await self.send_json({
             'type': 'next_question',
             'data': event['data']
@@ -166,9 +103,6 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
 
         both_submitted = submission_result['both_submitted']
 
-        # Confirm that the answer has been stored successfully.
-        await self.send_json({'type': 'answer_accepted'})
-
         await self.channel_layer.group_send(
             self.group_name,
             {
@@ -178,109 +112,73 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
         )
 
         if both_submitted:
-            result_data = await self.finalize_match_logic(self.match_id)
-            event_type = result_data.get('event')
+            try:
+                next_question_data = await self.advance_to_next_question(self.match_id)
+            except Exception:
+                logger.exception("Failed to advance PvP match %s", self.match_id)
+                await self.send_json({'error': 'Ошибка перехода к следующему вопросу.'})
+                return
 
-            if event_type == 'next_question':
+            if next_question_data:
                 await self.channel_layer.group_send(
                     self.group_name,
                     {
-                        'type': 'next_question',
-                        'data': result_data
+                        'type': 'question_changed',
+                        'data': next_question_data
                     }
                 )
-            elif event_type == 'finished':
-                await self.channel_layer.group_send(
-                    self.group_name,
-                    {
-                        'type': 'match_finished',
-                        'data': result_data
-                    }
-                )
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+                return
+
+            try:
+                result_data = await self.finalize_match_logic(self.match_id)
+            except Exception:
+                logger.exception("Failed to finalize PvP match %s", self.match_id)
+                await self.send_json({'error': 'Ошибка завершения матча. Попробуйте снова.'})
+                return
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    'type': 'match_finished',
+                    'data': result_data
+                }
+            )
 
     @database_sync_to_async
-    def check_participation(self, match_id, user):
+    def check_participation(self, match_id, user_id):
+        return self._check_participation(match_id, user_id)
+
+    def _check_participation(self, match_id, user_id):
         try:
             match = Match.objects.get(id=match_id)
-<<<<<<< Updated upstream
-            return match.player1 == user or match.player2 == user
-=======
-            if match.player1_id == user_id:
-                return True
-
-            if match.player2_id == user_id:
-                return True
-            if not match.player2_id:
-                return match.player1_id == user_id
-
-            return False
->>>>>>> Stashed changes
+            return bool(match.player1_id == user_id or match.player2_id == user_id)
         except Match.DoesNotExist:
             return False
 
     @database_sync_to_async
-    def get_match_state(self):
+    def get_match_status(self):
         try:
             match = Match.objects.get(id=self.match_id)
-            return MatchSerializer(match).data
+            return match.status
         except Match.DoesNotExist:
-            return {}
+            return 'cancelled'
 
     @database_sync_to_async
-    def get_match_instance(self):
-        return Match.objects.select_related('task', 'player1', 'player2').get(id=self.match_id)
+    def save_answer_to_db(self, answer):
+        return self._save_answer_to_db(answer)
 
-    @database_sync_to_async
-    def save_answer_to_db(self, match, answer):
-        is_correct = (answer.strip().lower() == match.task.correct_answer.strip().lower())
-        now = timezone.now()
+    def _save_answer_to_db(self, answer):
+        with transaction.atomic():
+            match = Match.objects.select_for_update().select_related('task').get(id=self.match_id)
 
-        if match.player1 == self.user:
-            match.player1_answer = answer
-            match.player1_submitted_at = now
-            match.player1_correct = is_correct
-        elif match.player2 == self.user:
-            match.player2_answer = answer
-            match.player2_submitted_at = now
-            match.player2_correct = is_correct
-        
-        match.save()
-
-<<<<<<< Updated upstream
-        # Проверяем, ответили ли оба
-        p1_done = match.player1_submitted_at is not None
-        p2_done = match.player2_submitted_at is not None
-        
-        return (p1_done and p2_done), p1_done, p2_done
-=======
-            now = timezone.now()
-            answer_text = (answer or '').strip()
-
-            if self._time_is_expired(match, now) and answer_text:
+            if match.status != 'active' or not match.player2_id:
                 return {
                     'accepted': False,
                     'both_submitted': False,
-                    'reason': 'Время на вопрос истекло',
+                    'reason': 'Матч ещё не готов к ответам',
                 }
 
-<<<<<<< Updated upstream
-=======
+            is_correct = answer.strip().casefold() == match.task.correct_answer.strip().casefold()
             now = timezone.now()
-            answer_text = (answer or '').strip()
-
-            if self._time_is_expired(match, now) and answer_text:
-                return {
-                    'accepted': False,
-                    'both_submitted': False,
-                    'reason': 'Время на вопрос истекло',
-                }
-
->>>>>>> Stashed changes
-            is_correct = answer_text.casefold() == match.task.correct_answer.strip().casefold()
 
             if match.player1_id == self.user.id:
                 if match.player1_submitted_at:
@@ -289,9 +187,11 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                         'both_submitted': False,
                         'reason': 'Ответ уже отправлен',
                     }
-                match.player1_answer = answer_text
+                match.player1_answer = answer
                 match.player1_submitted_at = now
                 match.player1_correct = is_correct
+                if is_correct:
+                    match.player1_score = int(match.player1_score or 0) + 1
             elif match.player2_id == self.user.id:
                 if match.player2_submitted_at:
                     return {
@@ -299,9 +199,11 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                         'both_submitted': False,
                         'reason': 'Ответ уже отправлен',
                     }
-                match.player2_answer = answer_text
+                match.player2_answer = answer
                 match.player2_submitted_at = now
                 match.player2_correct = is_correct
+                if is_correct:
+                    match.player2_score = int(match.player2_score or 0) + 1
             else:
                 return {
                     'accepted': False,
@@ -316,6 +218,8 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                 'player2_submitted_at',
                 'player1_correct',
                 'player2_correct',
+                'player1_score',
+                'player2_score',
             ])
 
             return {
@@ -323,269 +227,101 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                 'both_submitted': bool(match.player1_submitted_at and match.player2_submitted_at),
                 'reason': None,
             }
->>>>>>> Stashed changes
 
     @database_sync_to_async
     def finalize_match_logic(self, match_id):
-        match = Match.objects.select_related('player1', 'player1__profile', 'player2', 'player2__profile').get(id=match_id)
-        
-        # Логика результата для ELO (1=победа P1, 0=победа P2, 0.5=ничья)
-        # Приоритет: Правильность -> Время (если нужно) -> Ничья
-        
-        result_val = 0.5
-        
-        p1_win = False
-        p2_win = False
-        is_draw = False
+        return self._finalize_match_logic(match_id)
 
-<<<<<<< Updated upstream
-        if match.player1_correct and not match.player2_correct:
-            result_val = 1.0
-            p1_win = True
-        elif not match.player1_correct and match.player2_correct:
-            result_val = 0.0
-            p2_win = True
-        elif match.player1_correct and match.player2_correct:
-            # Оба ответили верно - ничья (или можно сравнивать время submitted_at)
-            result_val = 0.5
-            is_draw = True
-        else:
-            # Оба ответили неверно
-            result_val = 0.5
-            is_draw = True
+    @database_sync_to_async
+    def advance_to_next_question(self, match_id):
+        return self._advance_to_next_question(match_id)
 
-        # Обновляем ELO
-        # Предполагаем наличие profile с полем elo (на основе provided views-tasks.py)
-        # Если поля elo нет, нужно добавить миграцию или обработку ошибок, 
-        # но по условию менять файлы нельзя, рассчитываем что модель готова.
-        
-        p1_rating = match.player1.profile.elo
-        p2_rating = match.player2.profile.elo
+    def _advance_to_next_question(self, match_id):
+        with transaction.atomic():
+            match = Match.objects.select_for_update().select_related('task').get(id=match_id)
 
-        new_p1_rating, new_p2_rating = calculate_elo(p1_rating, p2_rating, result_val)
+            total_questions = max(1, int(match.questions_count or 1))
+            question_task_ids = match.question_task_ids if isinstance(match.question_task_ids, list) else []
 
-        # Сохраняем новые рейтинги
-        match.player1.profile.elo = new_p1_rating
-        match.player1.profile.save()
-        
-        match.player2.profile.elo = new_p2_rating
-        match.player2.profile.save()
+            if not question_task_ids and match.task_id:
+                question_task_ids = [match.task_id]
 
-        # Обновляем статус матча
-        match.status = 'finished'
-        match.finished_at = timezone.now()
-        match.save()
-        
-        # Обновляем статистику задач (solved/correct)
-        # P1
-        match.player1.profile.solved_tasks += 1
-        if match.player1_correct:
-             match.player1.profile.correct_answers += 1
-        match.player1.profile.save()
-        
-        # P2
-        match.player2.profile.solved_tasks += 1
-        if match.player2_correct:
-             match.player2.profile.correct_answers += 1
-        match.player2.profile.save()
+            if match.current_question_index >= total_questions:
+                return None
 
-        return {
-            'match_id': match.id,
-            'winner': 'player1' if p1_win else ('player2' if p2_win else 'draw'),
-            'player1_username': match.player1.username,
-            'player2_username': match.player2.username,
-            'player1_elo_change': new_p1_rating - p1_rating,
-            'player2_elo_change': new_p2_rating - p2_rating,
-            'player1_new_elo': new_p1_rating,
-            'player2_new_elo': new_p2_rating,
-            'correct_answer': match.task.correct_answer,
-            'player1_answer': match.player1_answer,
-            'player2_answer': match.player2_answer,
-            'player1_correct': match.player1_correct,
-            'player2_correct': match.player2_correct
-        }
-=======
-    def _time_is_expired(self, match, now):
-        if (
-            not match.timer_enabled
-            or not match.time_limit_seconds
-            or not match.current_question_started_at
-        ):
-            return False
+            next_question_index = match.current_question_index + 1
+            if len(question_task_ids) < next_question_index:
+                return None
 
-        deadline = match.current_question_started_at + timedelta(seconds=match.time_limit_seconds)
-        return now >= deadline
+            next_task_id = int(question_task_ids[next_question_index - 1])
+            match.task_id = next_task_id
+            match.current_question_index = next_question_index
+            match.question_task_ids = question_task_ids
+            match.questions_count = total_questions
 
-    def _time_left_seconds(self, match):
-        if (
-            not match.timer_enabled
-            or not match.time_limit_seconds
-            or not match.current_question_started_at
-        ):
-            return None
+            match.player1_answer = ''
+            match.player2_answer = ''
+            match.player1_submitted_at = None
+            match.player2_submitted_at = None
+            match.player1_correct = False
+            match.player2_correct = False
 
-        deadline = match.current_question_started_at + timedelta(seconds=match.time_limit_seconds)
-        return max(0, int((deadline - timezone.now()).total_seconds()))
+            match.save(update_fields=[
+                'task',
+                'current_question_index',
+                'question_task_ids',
+                'questions_count',
+                'player1_answer',
+                'player2_answer',
+                'player1_submitted_at',
+                'player2_submitted_at',
+                'player1_correct',
+                'player2_correct',
+            ])
 
-    def _winner_by_score(self, match):
-        if match.player1_score > match.player2_score:
-            return 'player1'
-        if match.player2_score > match.player1_score:
-            return 'player2'
-        return 'draw'
-
-    def _build_finished_payload(self, match, p1_rating, p2_rating):
-        return {
-            'event': 'finished',
-            'match_id': match.id,
-            'winner': self._winner_by_score(match),
-            'player1_username': match.player1.username,
-            'player2_username': match.player2.username if match.player2 else None,
-            'player1_new_rating': p1_rating,
-            'player2_new_rating': p2_rating,
-            'player1_score': match.player1_score,
-            'player2_score': match.player2_score,
-            'total_questions': match.questions_count,
-            'player1_correct': match.player1_correct,
-            'player2_correct': match.player2_correct,
-            'correct_answer': match.task.correct_answer,
-        }
-
-    def _time_is_expired(self, match, now):
-        if (
-            not match.timer_enabled
-            or not match.time_limit_seconds
-            or not match.current_question_started_at
-        ):
-            return False
-
-        deadline = match.current_question_started_at + timedelta(seconds=match.time_limit_seconds)
-        return now >= deadline
-
-    def _time_left_seconds(self, match):
-        if (
-            not match.timer_enabled
-            or not match.time_limit_seconds
-            or not match.current_question_started_at
-        ):
-            return None
-
-        deadline = match.current_question_started_at + timedelta(seconds=match.time_limit_seconds)
-        return max(0, int((deadline - timezone.now()).total_seconds()))
-
-    def _winner_by_score(self, match):
-        if match.player1_score > match.player2_score:
-            return 'player1'
-        if match.player2_score > match.player1_score:
-            return 'player2'
-        return 'draw'
-
-    def _build_finished_payload(self, match, p1_rating, p2_rating):
-        return {
-            'event': 'finished',
-            'match_id': match.id,
-            'winner': self._winner_by_score(match),
-            'player1_username': match.player1.username,
-            'player2_username': match.player2.username if match.player2 else None,
-            'player1_new_rating': p1_rating,
-            'player2_new_rating': p2_rating,
-            'player1_score': match.player1_score,
-            'player2_score': match.player2_score,
-            'total_questions': match.questions_count,
-            'player1_correct': match.player1_correct,
-            'player2_correct': match.player2_correct,
-            'correct_answer': match.task.correct_answer,
-        }
+            match = Match.objects.select_related('task').get(id=match.id)
+            return {
+                'match_id': match.id,
+                'task_text': match.task.text,
+                'current_question_index': match.current_question_index,
+                'questions_count': match.questions_count,
+                'player1_score': match.player1_score,
+                'player2_score': match.player2_score,
+            }
 
     def _finalize_match_logic(self, match_id):
         with transaction.atomic():
-            # Do not join nullable player2 under FOR UPDATE (PostgreSQL limitation).
-            match = Match.objects.select_for_update().select_related(
-                'player1',
+            # Lock only the match row first. Doing select_for_update with
+            # nullable joins (player2/profile) triggers Postgres error:
+            # "FOR UPDATE cannot be applied to the nullable side of an outer join".
+            locked_match = Match.objects.select_for_update().get(id=match_id)
+            match = Match.objects.select_related(
+                'player1__profile',
+                'player2__profile',
                 'task'
-            ).get(id=match_id)
-
-            task_ids = list(match.question_task_ids or [match.task_id])
-            if not task_ids:
-                task_ids = [match.task_id]
-            if match.questions_count < 1:
-                match.questions_count = 1
-            if len(task_ids) < match.questions_count:
-                task_ids.extend([task_ids[-1]] * (match.questions_count - len(task_ids)))
-                match.question_task_ids = task_ids
-            if match.current_question_index < 1:
-                match.current_question_index = 1
-
-            if not match.player2_id:
-                p1_profile, _ = Profile.objects.get_or_create(user_id=match.player1_id)
-                return self._build_finished_payload(match, p1_profile.rating, None)
-
-            Profile.objects.get_or_create(user_id=match.player1_id)
-            Profile.objects.get_or_create(user_id=match.player2_id)
-            profiles = Profile.objects.select_for_update().filter(
-                user_id__in=[match.player1_id, match.player2_id]
-            )
-            profiles_map = {profile.user_id: profile for profile in profiles}
-
-            p1_profile = profiles_map.get(match.player1_id)
-            p2_profile = profiles_map.get(match.player2_id)
+            ).get(id=locked_match.id)
 
             if match.status == 'finished':
-                return self._build_finished_payload(match, p1_profile.rating, p2_profile.rating)
-
-            both_submitted = bool(match.player1_submitted_at and match.player2_submitted_at)
-            if match.status != 'active' or not both_submitted:
-                return {'event': 'pending'}
-
-            if match.player1_correct:
-                match.player1_score += 1
-            if match.player2_correct:
-                match.player2_score += 1
-
-            has_next_question = match.current_question_index < match.questions_count
-            if has_next_question:
-                next_index = match.current_question_index + 1
-                next_task_id = task_ids[next_index - 1]
-                next_task = Task.objects.get(id=next_task_id)
-
-                match.current_question_index = next_index
-                match.task = next_task
-                match.current_question_started_at = timezone.now() if match.timer_enabled else None
-                match.player1_answer = ''
-                match.player2_answer = ''
-                match.player1_submitted_at = None
-                match.player2_submitted_at = None
-                match.player1_correct = False
-                match.player2_correct = False
-                match.save(update_fields=[
-                    'questions_count',
-                    'current_question_index',
-                    'question_task_ids',
-                    'task',
-                    'current_question_started_at',
-                    'player1_score',
-                    'player2_score',
-                    'player1_answer',
-                    'player2_answer',
-                    'player1_submitted_at',
-                    'player2_submitted_at',
-                    'player1_correct',
-                    'player2_correct',
-                ])
+                if match.player1_score > match.player2_score:
+                    winner = 'player1'
+                elif match.player2_score > match.player1_score:
+                    winner = 'player2'
+                else:
+                    winner = 'draw'
 
                 return {
-                    'event': 'next_question',
                     'match_id': match.id,
-                    'task_text': next_task.text,
-                    'current_question_index': match.current_question_index,
-                    'questions_count': match.questions_count,
+                    'winner': winner,
+                    'player1_username': match.player1.username,
+                    'player2_username': match.player2.username,
+                    'player1_new_rating': match.player1.profile.rating,
+                    'player2_new_rating': match.player2.profile.rating,
+                    'player1_correct': match.player1_correct,
+                    'player2_correct': match.player2_correct,
                     'player1_score': match.player1_score,
                     'player2_score': match.player2_score,
-                    'timer_enabled': match.timer_enabled,
-                    'time_limit_seconds': match.time_limit_seconds,
-                    'time_left_seconds': self._time_left_seconds(match),
-                    'hints_enabled': match.hints_enabled,
-                    'task_hints': (next_task.hints or []) if match.hints_enabled else [],
+                    'total_questions': max(1, int(match.questions_count or 1)),
+                    'correct_answer': match.task.correct_answer,
                 }
 
             if match.player1_score > match.player2_score:
@@ -595,33 +331,41 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
             else:
                 result = 0.5
 
-            p1_rating = p1_profile.rating
-            p2_rating = p2_profile.rating
+            p1_rating = match.player1.profile.rating
+            p2_rating = match.player2.profile.rating
 
             new_p1, new_p2 = calculate_elo(p1_rating, p2_rating, result)
+            solved_delta = max(1, int(match.questions_count or 1))
 
-            p1_profile.rating = new_p1
-            p2_profile.rating = new_p2
-            p1_profile.solved_tasks += match.questions_count
-            p2_profile.solved_tasks += match.questions_count
-            p1_profile.correct_answers += match.player1_score
-            p2_profile.correct_answers += match.player2_score
+            match.player1.profile.rating = new_p1
+            match.player2.profile.rating = new_p2
+            match.player1.profile.solved_tasks += solved_delta
+            match.player2.profile.solved_tasks += solved_delta
+            match.player1.profile.correct_answers += int(match.player1_score or 0)
+            match.player2.profile.correct_answers += int(match.player2_score or 0)
 
-            p1_profile.save(update_fields=['rating', 'solved_tasks', 'correct_answers'])
-            p2_profile.save(update_fields=['rating', 'solved_tasks', 'correct_answers'])
+            match.player1.profile.save()
+            match.player2.profile.save()
 
             match.status = 'finished'
             match.finished_at = timezone.now()
-            match.save(update_fields=[
-                'questions_count',
-                'player1_score',
-                'player2_score',
-                'status',
-                'finished_at',
-            ])
+            match.save(update_fields=['status', 'finished_at'])
 
-            return self._build_finished_payload(match, new_p1, new_p2)
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+            return {
+                'match_id': match.id,
+                'winner': (
+                    'player1' if result == 1.0 else
+                    'player2' if result == 0.0 else
+                    'draw'
+                ),
+                'player1_username': match.player1.username,
+                'player2_username': match.player2.username,
+                'player1_new_rating': new_p1,
+                'player2_new_rating': new_p2,
+                'player1_correct': match.player1_correct,
+                'player2_correct': match.player2_correct,
+                'player1_score': match.player1_score,
+                'player2_score': match.player2_score,
+                'total_questions': max(1, int(match.questions_count or 1)),
+                'correct_answer': match.task.correct_answer,
+            }

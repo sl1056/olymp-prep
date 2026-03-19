@@ -1,8 +1,8 @@
 <template>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  </head>
   <div>
-    <head>
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </head>
     <HeaderEnter />
     
     <div class="profile-page">
@@ -17,29 +17,37 @@
           <div class="user-info">
             <div class="name-section">
               <h1 class="user-name">{{ userData?.username }}</h1>
-              <button class="edit-btn" @click="openEditModal" title="Редактировать имя">
-                <i class="fas fa-edit"></i>
-              </button>
             </div>
-            <div class="user-id">ID: 2562341</div>
           </div>
         </div>
         
         <div class="profile-content">
           <div class="stats-grid">
             <div class="stat-card">
-              <div class="stat-number">91</div>
+              <div class="stat-number">{{ statistics?.total_attempts }}</div>
               <div class="stat-label">Выполнено тестов</div>
             </div>
             
             <div class="stat-card">
-              <div class="stat-number percentage">87%</div>
+              <div class="stat-number percentage">{{statistics?.accuracy_percent}}%</div>
               <div class="stat-label">Правильных тестов</div>
             </div>
             
             <div class="stat-card">
-              <div class="stat-number">181</div>
+              <div class="stat-number">0</div>
               <div class="stat-label">Сражений в PvP</div>
+            </div>
+          </div>
+          
+          <!-- Кнопка полной статистики и достижений -->
+          <div class="full-stats-section">
+            <div class="stats-buttons-row">
+              <button class="full-stats-btn" @click="goToFullStats">
+                <i class="fas fa-chart-bar"></i> Полная статистика
+              </button>
+              <button class="full-stats-btn" @click="goToAchievements">
+                <i class="fas fa-trophy"></i> Достижения
+              </button>
             </div>
           </div>
           
@@ -60,7 +68,7 @@
               </div>
               <div class="info-content">
                 <div class="info-label">Дата регистрации</div>
-                <div class="info-value">15 января 2023</div>
+                <div class="info-value">{{ formattedDate }}</div>
               </div>
             </div>
           </div>
@@ -98,105 +106,189 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import HeaderEnter from '@/components/HeaderEnter.vue'
 import axios from 'axios'
 
-const router = useRouter()
-
-const userData = ref(null)
-const isLoading = ref(true)
-const isModalOpen = ref(false)
-const newName = ref('')
-
-const avatarColors = {
-  'B': ['#FFD166', '#FF9E6D'],
-  'A': ['#118AB2', '#06D6A0'],
-  'M': ['#EF476F', '#FF9E6D'],
-  'S': ['#4A7B9D', '#118AB2'],
-  'D': ['#224762', '#4A7B9D'],
-  'J': ['#06D6A0', '#118AB2'],
-  'K': ['#FF9E6D', '#EF476F'],
-  'P': ['#EF476F', '#FFD166'],
-  'R': ['#118AB2', '#06D6A0'],
-  'T': ['#4A7B9D', '#224762'],
-  'default': ['#FFD166', '#FF9E6D']
-}
-
-const avatarStyle = computed(() => {
-  const username = userData.value?.username || ''
-  const firstLetter = username?.charAt(0)?.toUpperCase() || ''
-  const colors = avatarColors[firstLetter] || avatarColors['default']
+export default {
+  name: 'ProfilePage',
   
-  return {
-    background: `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)`
-  }
-})
-
-const avatarLetter = computed(() => {
-  return userData.value?.username?.charAt(0)?.toUpperCase() || '?'
-})
-
-const openEditModal = () => {
-  newName.value = userData.value?.username || ''
-  isModalOpen.value = true
-}
-
-const closeEditModal = () => {
-  isModalOpen.value = false
-  newName.value = ''
-}
-
-const saveName = () => {
-  const name = newName.value.trim()
-  
-  if (name.length < 2) {
-    alert('Имя должно содержать минимум 2 символа')
-    return
-  }
-  
-  if (name.length > 20) {
-    alert('Имя слишком длинное (максимум 20 символов)')
-    return
-  }
-  
-  userData.value.username = name
-  closeEditModal()
-}
-
-const fetchUserData = async () => {
-  try {
-    const token = localStorage.getItem('authToken')
-    if (!token) {
-      router.push('/auth')
-      return
+  components: {
+    HeaderEnter
+  },
+  methods: {
+    goToFullStats() {
+      this.$router.push('/profile/stats')
+    },
+    goToAchievements() {
+      this.$router.push('/profile/achievements')
     }
-
-    const response = await axios.get('http://localhost:8000/api/auth/profile/', {
-      headers: {
-        'Authorization': `Token ${token}`
+  },
+  setup() {
+    const router = useRouter()
+    
+    const statistics = ref(null)
+    const userData = ref(null)
+    const isLoading = ref(true)
+    const isModalOpen = ref(false)
+    const newName = ref('')
+    
+    const avatarColors = {
+      'B': ['#FFD166', '#FF9E6D'],
+      'A': ['#118AB2', '#06D6A0'],
+      'M': ['#EF476F', '#FF9E6D'],
+      'S': ['#4A7B9D', '#118AB2'],
+      'D': ['#224762', '#4A7B9D'],
+      'J': ['#06D6A0', '#118AB2'],
+      'K': ['#FF9E6D', '#EF476F'],
+      'P': ['#EF476F', '#FFD166'],
+      'R': ['#118AB2', '#06D6A0'],
+      'T': ['#4A7B9D', '#224762'],
+      'default': ['#FFD166', '#FF9E6D']
+    }
+    
+    const avatarStyle = computed(() => {
+      const username = userData.value?.username || ''
+      const firstLetter = username?.charAt(0)?.toUpperCase() || ''
+      const colors = avatarColors[firstLetter] || avatarColors['default']
+      
+      return {
+        background: `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)`
       }
     })
     
-    userData.value = response.data
-  } catch (err) {
-    console.error('Ошибка при загрузке данных пользователя:', err)
-    router.push('/auth')
-  } finally {
-    isLoading.value = false
+    const avatarLetter = computed(() => {
+      return userData.value?.username?.charAt(0)?.toUpperCase() || '?'
+    })
+    
+    const formattedDate = computed(() => {
+      if (!userData.value?.created_at) return 'Не указана'
+      
+      try {
+        const date = new Date(userData.value.created_at)
+        return date.toLocaleDateString('ru-RU', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })
+      } catch (error) {
+        return 'Не указана'
+      }
+    })
+    
+    const openEditModal = () => {
+      newName.value = userData.value?.username || ''
+      isModalOpen.value = true
+    }
+    
+    const closeEditModal = () => {
+      isModalOpen.value = false
+      newName.value = ''
+    }
+    
+    const saveName = () => {
+      const name = newName.value.trim()
+      
+      if (name.length < 2) {
+        alert('Имя должно содержать минимум 2 символа')
+        return
+      }
+      
+      if (name.length > 20) {
+        alert('Имя слишком длинное (максимум 20 символов)')
+        return
+      }
+      
+      userData.value.username = name
+      closeEditModal()
+    }
+    
+    const getAnalytics = async () => {
+      try {
+        const token = localStorage.getItem('authToken')
+        if (!token) {
+          router.push('/auth')
+          return
+        }
+        
+        console.log(token);
+
+        const response = await axios.get('http://localhost:8000/api/analytics/overall/', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        statistics.value = response.data;
+        console.log(statistics.value);
+
+      } catch (err) {
+        console.error('Ошибка при загрузке статистики пользователя:', err)
+      } 
+    }
+
+    const goToFullStats = () => {
+      router.push('/profile/stats')
+    }
+    
+    const goToAchievements = () => {
+      router.push('/profile/achievements')
+    }
+    
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('authToken')
+        if (!token) {
+          router.push('/auth')
+          return
+        }
+
+        const response = await axios.get('http://localhost:8000/api/auth/profile/', {
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        })
+        
+        userData.value = response.data
+        console.log(userData.value)
+
+      } catch (err) {
+        console.error('Ошибка при загрузке данных пользователя:', err)
+        router.push('/auth')
+      } finally {
+        isLoading.value = false
+      }
+    }
+    
+    const logout = () => {
+      localStorage.removeItem('authToken')
+      router.push('/auth')
+    }
+    
+    onMounted(() => {
+      fetchUserData()
+      getAnalytics()
+    })
+    
+    return {
+      statistics,
+      userData,
+      isLoading,
+      isModalOpen,
+      newName,
+      avatarStyle,
+      avatarLetter,
+      formattedDate,
+      openEditModal,
+      closeEditModal,
+      saveName,
+      fetchUserData,
+      logout
+    }
   }
 }
-
-const logout = () => {
-  localStorage.removeItem('authToken')
-  router.push('/auth')
-}
-
-onMounted(() => {
-  fetchUserData()
-})
 </script>
 
 <style scoped>
@@ -323,7 +415,7 @@ html, body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 30px;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
 .stat-card {
@@ -360,6 +452,46 @@ html, body {
   color: #5A6C7D;
   font-weight: 500;
   font-family: 'Inter', sans-serif;
+}
+
+.full-stats-section {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.stats-buttons-row {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+.full-stats-btn {
+  flex: 1;
+  padding: 20px;
+  background: linear-gradient(135deg, #4A7B9D 0%, #224762 100%);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 8px 20px rgba(74, 123, 157, 0.2);
+}
+
+.full-stats-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(34, 71, 98, 0.25);
+  background: linear-gradient(135deg, #5A8BB0 0%, #2B5778 100%);
+}
+
+.full-stats-btn i {
+  font-size: 20px;
 }
 
 .info-section {
@@ -427,7 +559,7 @@ html, body {
   justify-content: center;
   gap: 12px;
   transition: all 0.3s ease;
-  font-family: 'Anonymous Pro', monospace;
+  font-family: 'Inter', sans-serif;
 }
 
 .logout-btn:hover {
@@ -449,7 +581,6 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  animation: fadeIn 0.3s ease;
 }
 
 .modal {
@@ -459,7 +590,6 @@ html, body {
   width: 100%;
   max-width: 500px;
   box-shadow: 0 30px 60px rgba(34, 71, 98, 0.15);
-  animation: slideUp 0.3s ease;
   font-family: 'Inter', sans-serif;
 }
 
@@ -549,21 +679,5 @@ html, body {
 
 .modal-btn.secondary:hover {
   background: #F0EBE2;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 </style>

@@ -32,14 +32,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    'channels',
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,10 +41,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'django_filters',
+    'import_export',
     'users.apps.UsersConfig',
     'tasks.apps.TasksConfig',
+    'badges',
     'channels',
     'pvp.apps.PvpConfig',
+    'analytics.apps.AnalyticsConfig',
+    'training.apps.TrainingConfig'
 ]
 
 REST_FRAMEWORK = {
@@ -63,7 +59,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_TYPES': ('Bearer', 'Token'),
 }
 
 # CORS configuration: allow the frontend to call this API
@@ -103,7 +99,7 @@ TEMPLATES = [
         },
     },
 ]
-
+ASGI_APPLICATION = 'olymp_prep.asgi.application'
 WSGI_APPLICATION = "olymp_prep.wsgi.application"
 
 
@@ -155,8 +151,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -165,18 +160,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CHANNEL_LAYERS = {
     "default": {
-<<<<<<< Updated upstream
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
-=======
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes

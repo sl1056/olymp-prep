@@ -40,7 +40,6 @@
           <button class="mobile-nav-btn" @click="goToTraining">Тренинг</button>
           <button class="mobile-nav-btn" :class="{ active: $route.path === '/' }" @click="goToHome">Главная</button>
           <button class="mobile-nav-btn" @click="goToPvP">PvP</button>
-          <button class="mobile-auth-btn" @click="goToProfile">{{ userData?.username || 'Профиль' }}</button>
         </div>
       </div>
     </div>
@@ -73,7 +72,7 @@ export default {
     
     goToTraining() {
       this.closeMobileMenu();
-      this.$router.push('/tasks');
+      this.$router.push('/test');
     },
     
     goToPvP() {
@@ -592,36 +591,6 @@ export default {
   
   .mobile-menu-toggle {
     top: 50px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .header {
-    background-color: #1a1a1a;
-  }
-  
-  .brand-name,
-  .mobile-brand-name {
-    color: #ffffff;
-  }
-  
-  .nav-btn {
-    background-color: #2c3e50;
-    color: #ffffff;
-    border-color: #ffffff;
-  }
-  
-  .auth-btn {
-    background-color: #1e3a5c;
-    border-color: #1e3a5c;
-  }
-  
-  .mobile-menu {
-    background-color: #1a1a1a;
-  }
-  
-  .mobile-menu-header {
-    border-bottom-color: #333;
   }
 }
 </style>
