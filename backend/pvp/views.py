@@ -9,6 +9,9 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.db import transaction
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -205,6 +208,9 @@ class CreateMatchView(APIView):
             "time_limit_seconds": match.time_limit_seconds,
             "share_link": share_link,
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -402,6 +408,9 @@ def find_or_create_room(user):
 
         return Response(response_data)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

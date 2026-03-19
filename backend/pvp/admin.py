@@ -32,6 +32,9 @@ class MatchAdmin(admin.ModelAdmin):
     get_subject.short_description = 'Предмет'
     get_subject.admin_order_field = 'task__subject'
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
