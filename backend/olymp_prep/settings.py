@@ -34,7 +34,10 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'daphne',
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     'channels',
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     'django.contrib.admin',
@@ -173,4 +176,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

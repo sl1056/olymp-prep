@@ -8,6 +8,9 @@ from datetime import timedelta
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.db import transaction
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -201,6 +204,9 @@ class CreateMatchView(APIView):
             "private_token": match.private_token if match.is_private else None,
             "time_limit_seconds": match.time_limit_seconds,
             "share_link": share_link,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         }, status=status.HTTP_201_CREATED)
 
@@ -395,4 +401,7 @@ def find_or_create_room(user):
             }
 
         return Response(response_data)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

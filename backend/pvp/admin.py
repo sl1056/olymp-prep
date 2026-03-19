@@ -31,4 +31,7 @@ class MatchAdmin(admin.ModelAdmin):
         return obj.task.get_subject_display() if obj.task else "-"
     get_subject.short_description = 'Предмет'
     get_subject.admin_order_field = 'task__subject'
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

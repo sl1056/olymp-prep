@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from tasks.models import Task 
 =======
 
+
 class Match(models.Model):
     STATUS_CHOICES = [
         ('waiting', 'Ожидание второго игрока'),
@@ -66,4 +67,7 @@ class QuizRoom(models.Model):
     def __str__(self):
         p2 = self.player2.username if self.player2 else "—"
         return f"Match {self.id}: {self.player1.username} vs {p2}"
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

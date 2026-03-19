@@ -14,6 +14,9 @@ from elo import calculate_elo
 from .elo import calculate_elo
 from users.models import Profile
 from tasks.models import Task
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 User = get_user_model()
@@ -69,9 +72,14 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
         
         if command == 'submit_answer':
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             answer_text = content.get('answer')
             if answer_text:
                 await self.handle_answer_submission(answer_text)
+=======
+            answer_text = content.get('answer', '')
+            await self.handle_answer_submission(answer_text)
+>>>>>>> Stashed changes
 =======
             answer_text = content.get('answer', '')
             await self.handle_answer_submission(answer_text)
@@ -132,8 +140,11 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
         })
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     # --- Database Sync Methods ---
 =======
+=======
+>>>>>>> Stashed changes
     async def next_question(self, event):
         await self.send_json({
             'type': 'next_question',
@@ -186,6 +197,9 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                         'data': result_data
                     }
                 )
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
     @database_sync_to_async
@@ -253,6 +267,19 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
                     'reason': 'Время на вопрос истекло',
                 }
 
+<<<<<<< Updated upstream
+=======
+            now = timezone.now()
+            answer_text = (answer or '').strip()
+
+            if self._time_is_expired(match, now) and answer_text:
+                return {
+                    'accepted': False,
+                    'both_submitted': False,
+                    'reason': 'Время на вопрос истекло',
+                }
+
+>>>>>>> Stashed changes
             is_correct = answer_text.casefold() == match.task.correct_answer.strip().casefold()
 
             if match.player1_id == self.user.id:
@@ -424,6 +451,52 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
             'correct_answer': match.task.correct_answer,
         }
 
+    def _time_is_expired(self, match, now):
+        if (
+            not match.timer_enabled
+            or not match.time_limit_seconds
+            or not match.current_question_started_at
+        ):
+            return False
+
+        deadline = match.current_question_started_at + timedelta(seconds=match.time_limit_seconds)
+        return now >= deadline
+
+    def _time_left_seconds(self, match):
+        if (
+            not match.timer_enabled
+            or not match.time_limit_seconds
+            or not match.current_question_started_at
+        ):
+            return None
+
+        deadline = match.current_question_started_at + timedelta(seconds=match.time_limit_seconds)
+        return max(0, int((deadline - timezone.now()).total_seconds()))
+
+    def _winner_by_score(self, match):
+        if match.player1_score > match.player2_score:
+            return 'player1'
+        if match.player2_score > match.player1_score:
+            return 'player2'
+        return 'draw'
+
+    def _build_finished_payload(self, match, p1_rating, p2_rating):
+        return {
+            'event': 'finished',
+            'match_id': match.id,
+            'winner': self._winner_by_score(match),
+            'player1_username': match.player1.username,
+            'player2_username': match.player2.username if match.player2 else None,
+            'player1_new_rating': p1_rating,
+            'player2_new_rating': p2_rating,
+            'player1_score': match.player1_score,
+            'player2_score': match.player2_score,
+            'total_questions': match.questions_count,
+            'player1_correct': match.player1_correct,
+            'player2_correct': match.player2_correct,
+            'correct_answer': match.task.correct_answer,
+        }
+
     def _finalize_match_logic(self, match_id):
         with transaction.atomic():
             # Do not join nullable player2 under FOR UPDATE (PostgreSQL limitation).
@@ -548,4 +621,7 @@ class MatchConsumer(AsyncJsonWebsocketConsumer):
             ])
 
             return self._build_finished_payload(match, new_p1, new_p2)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
